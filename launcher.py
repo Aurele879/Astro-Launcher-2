@@ -22,17 +22,20 @@ class Profile:
         self.name = name
         self.version = version
         self.profile_directory = "instances/"+self.name
-    def checkVersionFiles(self):
-        self.installedVersionsList = minecraft_launcher_lib.utils.get_minecraft_directory()
-        for element in minecraft_launcher_lib.utils.get_installed_versions(self.profile_directory):
-            if element == self.version:
-                self.launch()
-        minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
+ 
     def launch(self):
-        self.checkVersionFiles()
-        options = minecraft_launcher_lib.utils.generate_test_options()
-        command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, options)
-        subprocess.run(command)
+        self.found = False
+        for element in minecraft_launcher_lib.utils.get_installed_versions(self.profile_directory):
+            if element["id"] == self.version:
+                self.found = True
+                options = minecraft_launcher_lib.utils.generate_test_options()
+                command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, options)
+                subprocess.run(command)
+                self.found = False
+        if self.found == False:
+            minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
+            self.launch()
+
 
 
 class Launcher:
@@ -46,12 +49,18 @@ class Launcher:
         self.bg_img= PhotoImage(file = "assets/background.png")
         self.bg= Label(self.root, image = self.bg_img)
         self.gear = Image.open("assets/settings.png")
+        
+        self.profile_list = self.loadProfilesList()
+        self.profileListByName = []
+        self.getProfileListByName()
+        
         self.setupWidgets()
-        self.profilesList = self.loadProfilesList()
+        
+        
         
         
     def setupWidgets(self):
-        self.play_button = customtkinter.CTkButton(self.root, command=self.loadingPage,
+        self.play_button = customtkinter.CTkButton(self.root, command=self.startGame,
                                             fg_color="#47316F",
                                             bg_color="#1C1C1C",
                                             hover_color="#342451",
@@ -85,7 +94,7 @@ class Launcher:
         self.profilesComboboxVariable = customtkinter.StringVar()
         self.profilesCombobox = customtkinter.CTkComboBox(self.root,
                                             variable=self.profilesComboboxVariable,
-                                            values=self.loadProfilesList(),
+                                            values=self.profileListByName,
                                             bg_color="#1C1C1C", 
                                             fg_color="#47316F", 
                                             button_color="#47316F", 
@@ -98,7 +107,7 @@ class Launcher:
         self.editProfile = customtkinter.CTkButton(self.root,
                                                 text="EDIT PROFILE",
                                                 height=26,
-                                                command=lambda: self.editProfilePage(Profile("optipute", "1.7.10")),
+                                                command=lambda: self.editProfilePage(self.profilesComboboxVariable.get()),
                                                 fg_color="#47316F",
                                                 bg_color="#1C1C1C",
                                                 hover_color="#342451",
@@ -124,8 +133,8 @@ class Launcher:
                                                 height=50,
                                                 corner_radius=20,
                                                 font=("Arial", 25, "bold"))
-        self.saveButton = customtkinter.CTkButton(self.root,
-                                                command=self.mainPage,
+        self.createProfileButton = customtkinter.CTkButton(self.root,
+                                                command=self.createProfile,
                                                 fg_color="#348D5C",
                                                 bg_color="#1C1C1C",
                                                 hover_color="#24512F",
@@ -163,7 +172,7 @@ class Launcher:
                                        font=("Arial", 50, "bold"))
         self.versionsComboboxVariable = customtkinter.StringVar()
         self.versionsCombobox = customtkinter.CTkComboBox(self.root,
-                                            variable=self.versionsComboboxVariable, 
+                                            variable=self.versionsComboboxVariable,
                                             bg_color="#1C1C1C", 
                                             fg_color="#47316F", 
                                             button_color="#47316F", 
@@ -183,7 +192,7 @@ class Launcher:
         self.editProfile.place_forget()
         self.loading_bar.place_forget()
         self.backButton.place_forget()
-        self.saveButton.place_forget()
+        self.createProfileButton.place_forget()
         self.deleteProfileButton.place_forget()
         self.profileDirButton.place_forget()
         self.profileNameEntry.place_forget()
@@ -192,7 +201,6 @@ class Launcher:
         self.profileCreationLabel.place_forget()
         print("SCREEN CLEARED")
 
-
     def loadingPage(self):
         self.clearUi()
         self.bg.pack()
@@ -200,7 +208,6 @@ class Launcher:
         self.loading_bar.start()
         self.backButton.place(x=750, y=470)
         print("LOADING PAGE DISPLAYED")
-
 
     def mainPage(self):
         self.clearUi()
@@ -212,19 +219,17 @@ class Launcher:
         self.settings_button.place(x=670, y=470)
         self.play_button.place(x=750, y=470)
         print("MAIN PAGE DISPLAYED")
-
-
+        
     def settingsPage(self):
         self.clearUi()
         self.bg.pack_forget()
         print("SETTINGS PAGE DISPLAYED")
         
-        
     def editProfilePage(self, profile):
         self.clearUi()
         self.bg.pack_forget()
         self.backButton.place(x=750, y=470)
-        self.saveButton.place(x=525, y=470)
+        self.createProfileButton.place(x=525, y=470)
         self.deleteProfileButton.place(relx=0.5, rely=0.72, anchor="center")
         self.profileDirButton.place(relx=0.5, rely=0.60, anchor="center")
         self.profileNameEntry.place(relx=0.5, rely=0.36, anchor="center")
@@ -239,14 +244,13 @@ class Launcher:
         self.bg.pack_forget()
         self.profileNameEntry.place(relx=0.5, rely=0.36, anchor="center")
         self.backButton.place(x=750, y=470)
-        self.saveButton.place(x=525, y=470)
+        self.createProfileButton.place(x=525, y=470)
         self.profileCreationLabel.place(relx=0.5, rely=0.1, anchor="center") 
         self.versionsCombobox.place(relx=0.5, rely=0.48, anchor="center")       
         print("EDIT PROFILE PAGE DISPLAYED")
         self.installableversions = self.getVersions()
         self.versionsCombobox.configure(values=self.installableversions)
-        
-        
+#/!\WILL SOON BE SEPARED FROM THE GUI CLASS/!\
     def getVersions(self):
         self.versionsList = []
         for version in minecraft_launcher_lib.utils.get_version_list():
@@ -259,29 +263,49 @@ class Launcher:
             if version["type"] == "release": self.availableVersionsList.append(version["id"])
         return self.availableVersionsList
     
-    
     def display(self):
         self.mainPage()
         self.root.mainloop()
         
     def createProfile(self):
-        self.name = self.profileNameEntry.get()
-        self.version = self.versionsComboboxVariable
-        self.newProfile = Profile(self.name, self.version)
-        self.profilesList.append(self.newProfile)
+        self.profile_list.append(Profile(self.profileNameEntry.get(), self.versionsCombobox.get()))
+        self.saveProfiles()
+        self.profile_list = self.loadProfilesList()
+        self.profilesCombobox.configure(values=self.getProfileListByName())
+        self.mainPage()
         
     def saveProfiles(self):
         with open("profiles.dat", "wb") as f:
-            pickle.dump(self.profilesList, f)
-        print(f"Liste de {len(self.profilesList)} profil(s) sauvegardée.")
-
+                pickle.dump(self.profile_list, f)
+    
     def loadProfilesList(self):
-        if not os.path.exists("profiles.dat"):
+        filename = "profiles.dat"
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return []
-        
-        with open("profiles.dat", "rb") as f:
+        with open(filename, "rb") as f:
             return pickle.load(f)
         
+    def getProfileListByName(self):
+        self.profileListByName = []
+        if len(self.profile_list) == 0: 
+            return self.profileListByName
+        else:
+            for element in self.profile_list:
+                self.profileListByName.append(element.name)
+            return self.profileListByName
+        
+    def getProfileFromName(self, name):
+        for i in range(len(self.profileListByName)):
+            if name == self.profile_list[i].name:
+                return self.profile_list[i]
     
+    def startGame(self):
+        self.loadingPage()
+        self.selectedProfileName = self.profilesComboboxVariable.get()
+        self.selectedProfile = self.getProfileFromName(self.selectedProfileName)
+        self.selectedProfile.launch()
+        
+        
+
 app = Launcher()
 app.display()
