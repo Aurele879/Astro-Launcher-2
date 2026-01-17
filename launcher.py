@@ -3,9 +3,9 @@ from tkinter import PhotoImage, Label, messagebox
 from PIL import Image
 import minecraft_launcher_lib
 import subprocess
-import threading
-import uuid
+import pickle
 import psutil
+import os
 
 def dummyFunc():
     print("Hello World")
@@ -47,7 +47,7 @@ class Launcher:
         self.bg= Label(self.root, image = self.bg_img)
         self.gear = Image.open("assets/settings.png")
         self.setupWidgets()
-        
+        self.profilesList = self.loadProfilesList()
         
         
     def setupWidgets(self):
@@ -84,7 +84,8 @@ class Launcher:
 
         self.profilesComboboxVariable = customtkinter.StringVar()
         self.profilesCombobox = customtkinter.CTkComboBox(self.root,
-                                            variable=self.profilesComboboxVariable, 
+                                            variable=self.profilesComboboxVariable,
+                                            values=self.loadProfilesList(),
                                             bg_color="#1C1C1C", 
                                             fg_color="#47316F", 
                                             button_color="#47316F", 
@@ -216,8 +217,6 @@ class Launcher:
     def settingsPage(self):
         self.clearUi()
         self.bg.pack_forget()
-        self.backButton.place(x=750, y=470)
-        self.saveButton.place(x=525, y=470)
         print("SETTINGS PAGE DISPLAYED")
         
         
@@ -251,19 +250,38 @@ class Launcher:
     def getVersions(self):
         self.versionsList = []
         for version in minecraft_launcher_lib.utils.get_version_list():
-            self.versionsList.append(version["id"])
+            if version["type"] == "release": self.versionsList.append(version["id"])
         return self.versionsList
             
     def getAvailableVersions(self, profile):
         self.availableVersionsList = []
         for version in minecraft_launcher_lib.utils.get_available_versions(profile.profile_directory):
-            self.availableVersionsList.append(version["id"])
+            if version["type"] == "release": self.availableVersionsList.append(version["id"])
         return self.availableVersionsList
     
     
     def display(self):
         self.mainPage()
         self.root.mainloop()
+        
+    def createProfile(self):
+        self.name = self.profileNameEntry.get()
+        self.version = self.versionsComboboxVariable
+        self.newProfile = Profile(self.name, self.version)
+        self.profilesList.append(self.newProfile)
+        
+    def saveProfiles(self):
+        with open("profiles.dat", "wb") as f:
+            pickle.dump(self.profilesList, f)
+        print(f"Liste de {len(self.profilesList)} profil(s) sauvegardée.")
 
+    def loadProfilesList(self):
+        if not os.path.exists("profiles.dat"):
+            return []
+        
+        with open("profiles.dat", "rb") as f:
+            return pickle.load(f)
+        
+    
 app = Launcher()
 app.display()
