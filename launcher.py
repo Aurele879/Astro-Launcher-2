@@ -31,10 +31,11 @@ class Profile:
                 options = minecraft_launcher_lib.utils.generate_test_options()
                 command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, options)
                 subprocess.run(command)
-                self.found = False
         if self.found == False:
             minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
-            self.launch()
+            options = minecraft_launcher_lib.utils.generate_test_options()
+            command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, options)
+            subprocess.run(command)
 
 
 
@@ -104,10 +105,10 @@ class Launcher:
                                             corner_radius=15, 
                                             width=150)
 
-        self.editProfile = customtkinter.CTkButton(self.root,
+        self.editProfileButton = customtkinter.CTkButton(self.root,
                                                 text="EDIT PROFILE",
                                                 height=26,
-                                                command=lambda: self.editProfilePage(self.profilesComboboxVariable.get()),
+                                                command=self.editProfilePage,
                                                 fg_color="#47316F",
                                                 bg_color="#1C1C1C",
                                                 hover_color="#342451",
@@ -133,8 +134,20 @@ class Launcher:
                                                 height=50,
                                                 corner_radius=20,
                                                 font=("Arial", 25, "bold"))
+        
         self.createProfileButton = customtkinter.CTkButton(self.root,
                                                 command=self.createProfile,
+                                                fg_color="#348D5C",
+                                                bg_color="#1C1C1C",
+                                                hover_color="#24512F",
+                                                text="CREATE",
+                                                width=200,
+                                                height=50,
+                                                corner_radius=20,
+                                                font=("Arial", 25, "bold"))
+        
+        self.saveEditedProfileButton = customtkinter.CTkButton(self.root,
+                                                command=self.editProfile,
                                                 fg_color="#348D5C",
                                                 bg_color="#1C1C1C",
                                                 hover_color="#24512F",
@@ -149,11 +162,13 @@ class Launcher:
                                             width=500,
                                             height=50,
                                             corner_radius=20)
+        
         self.profileDirButton = customtkinter.CTkButton(self.root, 
                                             text="OPEN DICTORY",
                                             width=500,
                                             height=50,
                                             corner_radius=20)
+        
         self.profileNameEntry = customtkinter.CTkEntry(self.root,
                                                 height=50,
                                                 placeholder_text="*profile name",
@@ -164,12 +179,15 @@ class Launcher:
                                                 text_color="black",
                                                 corner_radius=15,
                                                 width=500)
+        
         self.profileEditionLabel = customtkinter.CTkLabel(self.root, 
                                        text="Profile Edition",
                                        font=("Arial", 50, "bold"))
+        
         self.profileCreationLabel = customtkinter.CTkLabel(self.root, 
                                        text="Profile Creation",
                                        font=("Arial", 50, "bold"))
+        
         self.versionsComboboxVariable = customtkinter.StringVar()
         self.versionsCombobox = customtkinter.CTkComboBox(self.root,
                                             variable=self.versionsComboboxVariable,
@@ -189,10 +207,11 @@ class Launcher:
         self.settings_button.place_forget()
         self.addProfileButton.place_forget()
         self.profilesCombobox.place_forget()
-        self.editProfile.place_forget()
+        self.editProfileButton.place_forget()
         self.loading_bar.place_forget()
         self.backButton.place_forget()
         self.createProfileButton.place_forget()
+        self.saveEditedProfileButton.place_forget()
         self.deleteProfileButton.place_forget()
         self.profileDirButton.place_forget()
         self.profileNameEntry.place_forget()
@@ -215,29 +234,32 @@ class Launcher:
         self.profilesComboboxVariable.set("latest")
         self.profilesCombobox.place(x=50, y=460)
         self.addProfileButton.place(x=204, y=460)
-        self.editProfile.place(x=50, y=500)
+        self.editProfileButton.place(x=50, y=500)
         self.settings_button.place(x=670, y=470)
         self.play_button.place(x=750, y=470)
         print("MAIN PAGE DISPLAYED")
         
     def settingsPage(self):
-        self.clearUi()
-        self.bg.pack_forget()
+        #self.clearUi()
+        #self.bg.pack_forget()
         print("SETTINGS PAGE DISPLAYED")
         
-    def editProfilePage(self, profile):
+    def editProfilePage(self):
         self.clearUi()
         self.bg.pack_forget()
         self.backButton.place(x=750, y=470)
-        self.createProfileButton.place(x=525, y=470)
+        self.saveEditedProfileButton.place(x=525, y=470)
         self.deleteProfileButton.place(relx=0.5, rely=0.72, anchor="center")
         self.profileDirButton.place(relx=0.5, rely=0.60, anchor="center")
         self.profileNameEntry.place(relx=0.5, rely=0.36, anchor="center")
         self.profileEditionLabel.place(relx=0.5, rely=0.1, anchor="center")
         self.versionsCombobox.place(relx=0.5, rely=0.48, anchor="center")
-        self.availableVersions = self.getAvailableVersions(profile)
+        
+        self.profile = self.getProfileFromName(self.profilesCombobox.get())
+        self.availableVersions = self.getAvailableVersions(self.profile)
         self.versionsCombobox.configure(values=self.availableVersions)
-        print("EDIT PROFILE PAGE DISPLAYED")
+        self.versionsCombobox.set(self.profile.version)
+
         
     def createProfilePage(self):
         self.clearUi()
@@ -247,10 +269,21 @@ class Launcher:
         self.createProfileButton.place(x=525, y=470)
         self.profileCreationLabel.place(relx=0.5, rely=0.1, anchor="center") 
         self.versionsCombobox.place(relx=0.5, rely=0.48, anchor="center")       
-        print("EDIT PROFILE PAGE DISPLAYED")
+
+        
         self.installableversions = self.getVersions()
         self.versionsCombobox.configure(values=self.installableversions)
-#/!\WILL SOON BE SEPARED FROM THE GUI CLASS/!\
+        self.latestReleasedVersion = self.installableversions[0]
+        self.versionsCombobox.set(self.latestReleasedVersion)
+        
+    def guiUpdate(self):
+        self.profilesCombobox.configure(values=self.getProfileListByName())
+        self.profileNameEntry.delete(0, customtkinter.END)
+        
+    def display(self):
+        self.mainPage()
+        self.root.mainloop()
+        
     def getVersions(self):
         self.versionsList = []
         for version in minecraft_launcher_lib.utils.get_version_list():
@@ -263,15 +296,24 @@ class Launcher:
             if version["type"] == "release": self.availableVersionsList.append(version["id"])
         return self.availableVersionsList
     
-    def display(self):
-        self.mainPage()
-        self.root.mainloop()
-        
     def createProfile(self):
         self.profile_list.append(Profile(self.profileNameEntry.get(), self.versionsCombobox.get()))
         self.saveProfiles()
         self.profile_list = self.loadProfilesList()
-        self.profilesCombobox.configure(values=self.getProfileListByName())
+        self.guiUpdate()
+        self.mainPage()
+
+    def editProfile(self):
+        self.editedProfile = self.getProfileFromName(self.profilesComboboxVariable.get())
+        self.index = 0
+        for i in range(len(self.profile_list)):
+            if self.editedProfile == self.profile_list[i]:
+                self.index = i
+                break
+        self.profile_list[self.index] = Profile(self.profileNameEntry.get(), self.versionsCombobox.get())
+        self.saveProfiles()
+        self.profile_list = self.loadProfilesList()
+        self.guiUpdate()
         self.mainPage()
         
     def saveProfiles(self):
