@@ -4,7 +4,7 @@ from PIL import Image
 import minecraft_launcher_lib
 import subprocess
 import pickle
-import psutil
+import uuid
 import os
 import shutil
 
@@ -13,11 +13,17 @@ if not os.path.exists("instances"):
     os.mkdir("instances")
 
 
+
+
 class Profile:
     def __init__(self, name, version):
         self.name = name
         self.version = version
         self.profile_directory = "instances/" + self.name
+        self.username = app.username
+        self.options = {"username": self.username,
+                        "uuid": str(uuid.uuid4()),
+                        "token": ""}
         
     def launch_sequence(self):
         self.found = False
@@ -30,8 +36,7 @@ class Profile:
             self.launch()
 
     def launch(self):
-        options = minecraft_launcher_lib.utils.generate_test_options()
-        command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, options)
+        command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
         subprocess.run(command)
 
 
@@ -50,158 +55,182 @@ class Launcher:
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
         self.get_profile_list_by_name()
+        self.username = "Steve"
         
         self.setup_widgets()
         
     def setup_widgets(self):
         self.play_button = customtkinter.CTkButton(self.root, command=self.start_game,
-                                            fg_color="#47316F",
-                                            bg_color="#1C1C1C",
-                                            hover_color="#342451",
-                                            text="PLAY",
-                                            width=200,
-                                            height=50,
-                                            corner_radius=20,
-                                            font=("Arial", 25, "bold"))
-
-        self.settings_button = customtkinter.CTkButton(self.root,
-                                                command=self.settings_page,
-                                                image=customtkinter.CTkImage(self.gear, size=(30, 30)),
-                                                fg_color="#47316F",
-                                                bg_color="#1C1C1C",
-                                                hover_color="#342451",
-                                                text="",
-                                                width=50,
-                                                height=50,
-                                                corner_radius=20)
-
-        self.add_profile_button = customtkinter.CTkButton(self.root,
-                                                    command=self.create_profile_page,
                                                     fg_color="#47316F",
                                                     bg_color="#1C1C1C",
                                                     hover_color="#342451",
-                                                    text="+",
-                                                    width=46,
-                                                    height=28,
-                                                    corner_radius=100)
+                                                    text="PLAY",
+                                                    width=200,
+                                                    height=50,
+                                                    corner_radius=20,
+                                                    font=("Arial", 25, "bold"))
+
+        self.settings_button = customtkinter.CTkButton(self.root,
+                                                        command=self.settings_page,
+                                                        image=customtkinter.CTkImage(self.gear, size=(30, 30)),
+                                                        fg_color="#47316F",
+                                                        bg_color="#1C1C1C",
+                                                        hover_color="#342451",
+                                                        text="",
+                                                        width=50,
+                                                        height=50,
+                                                        corner_radius=20)
+
+        self.add_profile_button = customtkinter.CTkButton(self.root,
+                                                            command=self.create_profile_page,
+                                                            fg_color="#47316F",
+                                                            bg_color="#1C1C1C",
+                                                            hover_color="#342451",
+                                                            text="+",
+                                                            width=46,
+                                                            height=28,
+                                                            corner_radius=100)
 
         self.profiles_combobox_variable = customtkinter.StringVar()
         self.profiles_combobox = customtkinter.CTkComboBox(self.root,
-                                            variable=self.profiles_combobox_variable,
-                                            values=self.profile_list_by_name,
-                                            bg_color="#1C1C1C", 
-                                            fg_color="#47316F", 
-                                            button_color="#47316F", 
-                                            border_color="#47316F", 
-                                            text_color="white", 
-                                            state="readonly", 
-                                            corner_radius=15, 
-                                            width=150)
+                                                            variable=self.profiles_combobox_variable,
+                                                            values=self.profile_list_by_name,
+                                                            bg_color="#1C1C1C", 
+                                                            fg_color="#47316F", 
+                                                            button_color="#47316F", 
+                                                            border_color="#47316F", 
+                                                            text_color="white", 
+                                                            state="readonly", 
+                                                            corner_radius=15, 
+                                                            width=150)
 
         self.edit_profile_button = customtkinter.CTkButton(self.root,
-                                                text="EDIT PROFILE",
-                                                height=26,
-                                                command=self.edit_profile_page,
-                                                fg_color="#47316F",
-                                                bg_color="#1C1C1C",
-                                                hover_color="#342451",
-                                                corner_radius=15,
-                                                width=200)
+                                                                text="EDIT PROFILE",
+                                                                height=26,
+                                                                command=self.edit_profile_page,
+                                                                fg_color="#47316F",
+                                                                bg_color="#1C1C1C",
+                                                                hover_color="#342451",
+                                                                corner_radius=15,
+                                                                width=200)
 
         self.loading_bar = customtkinter.CTkProgressBar(self.root,
-                                                    mode="indeterminate",
-                                                    width=660,
-                                                    height=20,
-                                                    corner_radius=100,
-                                                    fg_color="#474747",
-                                                    bg_color="#1C1C1C",
-                                                    progress_color="#47316F")
+                                                            mode="indeterminate",
+                                                            width=660,
+                                                            height=20,
+                                                            corner_radius=100,
+                                                            fg_color="#474747",
+                                                            bg_color="#1C1C1C",
+                                                            progress_color="#47316F")
 
         self.back_button = customtkinter.CTkButton(self.root,
-                                                command=self.main_page,
-                                                fg_color="#972626",
-                                                bg_color="#1C1C1C",
-                                                hover_color="#751F1F",
-                                                text="CANCEL",
-                                                width=200,
-                                                height=50,
-                                                corner_radius=20,
-                                                font=("Arial", 25, "bold"))
+                                                        command=self.main_page,
+                                                        fg_color="#972626",
+                                                        bg_color="#1C1C1C",
+                                                        hover_color="#751F1F",
+                                                        text="CANCEL",
+                                                        width=200,
+                                                        height=50,
+                                                        corner_radius=20,
+                                                        font=("Arial", 25, "bold"))
         
         self.create_profile_button = customtkinter.CTkButton(self.root,
-                                                command=self.create_profile,
-                                                fg_color="#348D5C",
-                                                bg_color="#1C1C1C",
-                                                hover_color="#24512F",
-                                                text="CREATE",
-                                                width=200,
-                                                height=50,
-                                                corner_radius=20,
-                                                font=("Arial", 25, "bold"))
+                                                                command=self.create_profile,
+                                                                fg_color="#348D5C",
+                                                                bg_color="#1C1C1C",
+                                                                hover_color="#24512F",
+                                                                text="CREATE",
+                                                                width=200,
+                                                                height=50,
+                                                                corner_radius=20,
+                                                                font=("Arial", 25, "bold"))
         
         self.save_edited_profile_button = customtkinter.CTkButton(self.root,
-                                                command=self.edit_profile,
-                                                fg_color="#348D5C",
-                                                bg_color="#1C1C1C",
-                                                hover_color="#24512F",
-                                                text="SAVE",
-                                                width=200,
-                                                height=50,
-                                                corner_radius=20,
-                                                font=("Arial", 25, "bold"))
+                                                                command=self.edit_profile,
+                                                                fg_color="#348D5C",
+                                                                bg_color="#1C1C1C",
+                                                                hover_color="#24512F",
+                                                                text="SAVE",
+                                                                width=200,
+                                                                height=50,
+                                                                corner_radius=20,
+                                                                font=("Arial", 25, "bold"))
         
         self.delete_profile_button = customtkinter.CTkButton(self.root,
-                                            fg_color="#47316F",
-                                            bg_color="#1C1C1C",
-                                            hover_color="#342451",
-                                            command=self.delete_profile,
-                                            text="DELETE PROFILE",
-                                            width=500,
-                                            height=50,
-                                            corner_radius=20)
+                                                            fg_color="#47316F",
+                                                            bg_color="#1C1C1C",
+                                                            hover_color="#342451",
+                                                            command=self.delete_profile,
+                                                            text="DELETE PROFILE",
+                                                            width=500,
+                                                            height=50,
+                                                            corner_radius=20)
         
         self.profile_dir_button = customtkinter.CTkButton(self.root,
-                                            fg_color="#47316F",
-                                            bg_color="#1C1C1C",
-                                            hover_color="#342451",
-                                            command=self.open_directory,
-                                            text="OPEN DICTORY",
-                                            width=500,
-                                            height=50,
-                                            corner_radius=20)
+                                                            fg_color="#47316F",
+                                                            bg_color="#1C1C1C",
+                                                            hover_color="#342451",
+                                                            command=self.open_directory,
+                                                            text="OPEN DICTORY",
+                                                            width=500,
+                                                            height=50,
+                                                            corner_radius=20)
         
         self.profile_name_entry = customtkinter.CTkEntry(self.root,
-                                                height=50,
-                                                placeholder_text="*profile name",
-                                                placeholder_text_color="gray",
-                                                bg_color="#1C1C1C",
-                                                fg_color="white",
-                                                border_color="white",
-                                                text_color="black",
-                                                corner_radius=15,
-                                                width=500)
+                                                                height=50,
+                                                                placeholder_text="*profile name",
+                                                                placeholder_text_color="gray",
+                                                                bg_color="#1C1C1C",
+                                                                fg_color="white",
+                                                                border_color="white",
+                                                                text_color="black",
+                                                                corner_radius=15,
+                                                                width=500)
         
         self.profile_edition_label = customtkinter.CTkLabel(self.root, 
-                                       text="Profile Edition",
-                                       font=("Arial", 50, "bold"))
+                                                           text="Profile Edition",
+                                                           font=("Arial", 50, "bold"))
         
         self.profile_creation_label = customtkinter.CTkLabel(self.root, 
-                                       text="Profile Creation",
-                                       font=("Arial", 50, "bold"))
+                                                           text="Profile Creation",
+                                                           font=("Arial", 50, "bold"))
+        self.username_label = customtkinter.CTkLabel(self.root, 
+                                                           text="Enter your nickname to continue",
+                                                           font=("Arial", 50, "bold"))
+        self.username_entry = customtkinter.CTkEntry(self.root,
+                                                                height=50,
+                                                                placeholder_text="*username",
+                                                                placeholder_text_color="gray",
+                                                                bg_color="#1C1C1C",
+                                                                fg_color="white",
+                                                                border_color="white",
+                                                                text_color="black",
+                                                                corner_radius=15,
+                                                                width=500)
+        
+        self.login_button = customtkinter.CTkButton(self.root,
+                                                            fg_color="#47316F",
+                                                            bg_color="#1C1C1C",
+                                                            hover_color="#342451",
+                                                            command=self.login,
+                                                            text="LOGIN",
+                                                            width=500,
+                                                            height=50,
+                                                            corner_radius=20)
         
         self.versions_combobox_variable = customtkinter.StringVar()
         self.versions_combobox = customtkinter.CTkComboBox(self.root,
-                                            variable=self.versions_combobox_variable,
-                                            bg_color="#1C1C1C", 
-                                            fg_color="#47316F", 
-                                            button_color="#47316F", 
-                                            border_color="#47316F", 
-                                            text_color="white", 
-                                            state="readonly", 
-                                            height=50,
-                                            corner_radius=15,
-                                            width=500)
-                       
+                                                            variable=self.versions_combobox_variable,
+                                                            bg_color="#1C1C1C", 
+                                                            fg_color="#47316F", 
+                                                            button_color="#47316F", 
+                                                            border_color="#47316F", 
+                                                            text_color="white", 
+                                                            state="readonly", 
+                                                            height=50,
+                                                            corner_radius=15,
+                                                            width=500)
+                        
     def clear_ui(self):
         self.play_button.place_forget()
         self.settings_button.place_forget()
@@ -223,20 +252,26 @@ class Launcher:
     def loading_page(self):
         self.clear_ui()
         self.bg.pack()
-        self.loading_bar.place(x=50, y=485)
+        self.loading_bar.place(relx=0.05, rely=0.882)
         self.loading_bar.start()
-        self.back_button.place(x=750, y=470)
         print("LOADING PAGE DISPLAYED")
-
+        
+    def login_page(self):
+        self.clear_ui()
+        self.bg.pack_forget()
+        self.username_label.place(relx=0.5, rely=0.1, anchor="center")
+        self.username_entry.place(relx=0.5, rely=0.48, anchor="center")
+        self.login_button.place(relx=0.5, rely=0.60, anchor="center")
+        
     def main_page(self):
         self.clear_ui()
         self.bg.pack()
         self.profiles_combobox_variable.set("latest")
-        self.profiles_combobox.place(x=50, y=460)
-        self.add_profile_button.place(x=204, y=460)
-        self.edit_profile_button.place(x=50, y=500)
-        self.settings_button.place(x=670, y=470)
-        self.play_button.place(x=750, y=470)
+        self.profiles_combobox.place(relx=0.05, rely=0.836)
+        self.add_profile_button.place(relx=0.204, rely=0.836)
+        self.edit_profile_button.place(relx=0.05, rely=0.91)
+        self.settings_button.place(relx=0.67, rely=0.855)
+        self.play_button.place(relx=0.75, rely=0.855)
         print("MAIN PAGE DISPLAYED")
         
     def settings_page(self):
@@ -248,8 +283,8 @@ class Launcher:
             return
         self.clear_ui()
         self.bg.pack_forget()
-        self.back_button.place(x=750, y=470)
-        self.save_edited_profile_button.place(x=525, y=470)
+        self.back_button.place(relx=0.75, rely=0.855)
+        self.save_edited_profile_button.place(relx=0.525, rely=0.855)
         self.delete_profile_button.place(relx=0.5, rely=0.72, anchor="center")
         self.profile_dir_button.place(relx=0.5, rely=0.60, anchor="center")
         self.profile_name_entry.place(relx=0.5, rely=0.36, anchor="center")
@@ -266,8 +301,8 @@ class Launcher:
         self.clear_ui()
         self.bg.pack_forget()
         self.profile_name_entry.place(relx=0.5, rely=0.36, anchor="center")
-        self.back_button.place(x=750, y=470)
-        self.create_profile_button.place(x=525, y=470)
+        self.back_button.place(relx=0.75, rely=0.855)
+        self.create_profile_button.place(relx=0.525, rely=0.855)
         self.profile_creation_label.place(relx=0.5, rely=0.1, anchor="center") 
         self.versions_combobox.place(relx=0.5, rely=0.48, anchor="center")       
 
@@ -281,7 +316,7 @@ class Launcher:
         self.profile_name_entry.delete(0, customtkinter.END)
         
     def display(self):
-        self.main_page()
+        self.login_page()
         self.root.mainloop()
         
     def get_versions(self):
@@ -363,6 +398,14 @@ class Launcher:
         with open("profiles.dat", "wb") as f:
             pickle.dump(self.profile_list, f)
         self.profile_list = self.load_profiles_list()
+        
+    def login(self):
+        self.username = self.username_entry.get()
+        if len(self.username) < 1 or " " in self.username:
+            messagebox.showerror("Error", "Invalid Username.")
+        else:
+            self.main_page()
+            
     
     def load_profiles_list(self):
         filename = "profiles.dat"
