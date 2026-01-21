@@ -51,6 +51,7 @@ class Launcher:
         self.bg_img = PhotoImage(file="assets/background.png")
         self.bg = Label(self.root, image=self.bg_img)
         self.gear = Image.open("assets/settings.png")
+        self.play = Image.open("assets/play.png")
         
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
@@ -64,16 +65,18 @@ class Launcher:
                                                     fg_color="#47316F",
                                                     bg_color="#1C1C1C",
                                                     hover_color="#342451",
-                                                    text="PLAY",
+                                                    text="PLAY ",
                                                     width=200,
                                                     height=50,
                                                     corner_radius=20,
+                                                    image=customtkinter.CTkImage(self.play, size=(30, 30)),
+                                                    compound="right",
                                                     font=("Arial", 25, "bold"))
 
         self.settings_button = customtkinter.CTkButton(self.root,
                                                         command=self.settings_page,
                                                         image=customtkinter.CTkImage(self.gear, size=(30, 30)),
-                                                        fg_color="#47316F",
+                                                        fg_color="#363636",
                                                         bg_color="#1C1C1C",
                                                         hover_color="#342451",
                                                         text="",
@@ -195,7 +198,7 @@ class Launcher:
                                                            text="Profile Creation",
                                                            font=("Arial", 50, "bold"))
         self.username_label = customtkinter.CTkLabel(self.root, 
-                                                           text="Enter your nickname to continue",
+                                                           text="Hello There !",
                                                            font=("Arial", 50, "bold"))
         self.username_entry = customtkinter.CTkEntry(self.root,
                                                                 height=50,
@@ -247,6 +250,9 @@ class Launcher:
         self.profile_edition_label.place_forget()
         self.versions_combobox.place_forget()
         self.profile_creation_label.place_forget()
+        self.username_entry.place_forget()
+        self.username_label.place_forget()
+        self.login_button.place_forget()
         print("SCREEN CLEARED")
 
     def loading_page(self):
@@ -260,8 +266,8 @@ class Launcher:
         self.clear_ui()
         self.bg.pack_forget()
         self.username_label.place(relx=0.5, rely=0.1, anchor="center")
-        self.username_entry.place(relx=0.5, rely=0.48, anchor="center")
-        self.login_button.place(relx=0.5, rely=0.60, anchor="center")
+        self.username_entry.place(relx=0.5, rely=0.68, anchor="center")
+        self.login_button.place(relx=0.5, rely=0.80, anchor="center")
         
     def main_page(self):
         self.clear_ui()
@@ -271,6 +277,7 @@ class Launcher:
         self.add_profile_button.place(relx=0.204, rely=0.836)
         self.edit_profile_button.place(relx=0.05, rely=0.91)
         self.settings_button.place(relx=0.67, rely=0.855)
+        self.settings_button.configure(state = "disabled")
         self.play_button.place(relx=0.75, rely=0.855)
         print("MAIN PAGE DISPLAYED")
         
