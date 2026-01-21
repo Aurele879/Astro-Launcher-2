@@ -1,9 +1,16 @@
-## 🛰️ Astro Launcher 2
+## 🪐 Astro Launcher 2
 <img src="assets/logo.png"></img>
 
 ## Overview
 My ultimate minecraft launcher, made using python.
 You can use it to play any version of Minecraft with separed game files for each profiles.
+
+### Login page
+### Main Page
+### Loading animation
+### Settings page
+/!\ SOON /!\
+### Profile Managment pages
 
 
 ## ⚙️ Installation
