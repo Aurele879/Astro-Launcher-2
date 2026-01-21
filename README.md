@@ -5,6 +5,16 @@
 My ultimate minecraft launcher, made using python.
 You can use it to play any version of Minecraft with separed game files for each profiles.
 
+### Objectives
+
+| Functionality | Implementation |
+| :--- | :--- |
+| **GUI** | ✅ |
+| **Profiles files separation** | ✅ |
+| **Offline Login** | ✅ |
+| **Microsoft Login** | ❌ |
+| **Customizable settings** | ❌ |
+
 ### Login page
 ### Main Page
 ### Loading animation
