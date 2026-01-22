@@ -235,6 +235,7 @@ class Launcher:
                                                             width=500)
                         
     def clear_ui(self):
+        self.gui_update()
         self.play_button.place_forget()
         self.settings_button.place_forget()
         self.add_profile_button.place_forget()
@@ -285,6 +286,7 @@ class Launcher:
         print("SETTINGS PAGE DISPLAYED")
         
     def edit_profile_page(self):
+        
         if self.profiles_combobox_variable.get() == "latest" :
             messagebox.showwarning("Invalid Action", "You can't edit an integrated profile.")
             return
@@ -345,7 +347,6 @@ class Launcher:
         os.mkdir(f"instances/{self.profile_name_entry.get()}")
         self.profile_list.append(Profile(self.profile_name_entry.get(), self.versions_combobox.get()))
         self.save_profiles()
-        self.gui_update()
         self.main_page()
 
     def edit_profile(self):
@@ -353,7 +354,7 @@ class Launcher:
         new_name = self.profile_name_entry.get()
         new_version = self.versions_combobox.get()
 
-        if not new_name:
+        if not new_name or (new_name in self.get_profile_list_by_name() and new_name != old_name):
             messagebox.showerror("Error", "Invalid Name.")
             return 1
 
@@ -371,7 +372,6 @@ class Launcher:
             self.profile_list[target_index] = Profile(new_name, new_version)
             
             self.save_profiles()
-            self.gui_update()
             self.main_page()
 
     def delete_profile(self):
