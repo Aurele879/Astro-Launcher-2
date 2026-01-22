@@ -7,12 +7,12 @@ import pickle
 import uuid
 import os
 import shutil
+import threading
+import time
 
 
 if not os.path.exists("instances"):
     os.mkdir("instances")
-
-
 
 
 class Profile:
@@ -20,10 +20,7 @@ class Profile:
         self.name = name
         self.version = version
         self.profile_directory = "instances/" + self.name
-        self.username = app.username
-        self.options = {"username": self.username,
-                        "uuid": str(uuid.uuid4()),
-                        "token": ""}
+        self.username = "Steve"
         
     def launch_sequence(self):
         self.found = False
@@ -34,10 +31,18 @@ class Profile:
         if self.found == False:
             minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
             self.launch()
+            return 0
 
     def launch(self):
+        self.options = {
+            "username": self.username,
+            "uuid": str(uuid.uuid4()),
+            "token": ""}
         command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
-        subprocess.run(command)
+    
+        
+        subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
+        os._exit(0)
 
 
 class Launcher:
@@ -56,7 +61,7 @@ class Launcher:
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
         self.get_profile_list_by_name()
-        self.username = "Steve"
+        self.username = None
         
         self.setup_widgets()
         
@@ -119,7 +124,7 @@ class Launcher:
 
         self.loading_bar = customtkinter.CTkProgressBar(self.root,
                                                             mode="indeterminate",
-                                                            width=660,
+                                                            width=900,
                                                             height=20,
                                                             corner_radius=100,
                                                             fg_color="#474747",
@@ -442,8 +447,10 @@ class Launcher:
         if self.profiles_combobox.get() == "latest":
             last_version = self.get_versions()
             self.selected_profile = Profile("latest", last_version[0])
-            
-        self.selected_profile.launch_sequence()
+        self.selected_profile.username = self.username
+        thread = threading.Thread(target=self.selected_profile.launch_sequence, daemon=True)
+        thread.start()
+        
         
 
 app = Launcher()
