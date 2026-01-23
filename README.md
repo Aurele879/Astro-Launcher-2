@@ -16,11 +16,16 @@ You can use it to play any version of Minecraft with separed game files for each
 | **Customizable settings** | ❌ |
 
 ### Login page
+<img src="preview/login_preview.png"></img>
 ### Main Page
+<img src="preview/main_preview.png"></img>
 ### Loading animation
+<img src="preview/loading_preview.png"></img>
 ### Settings page
 /!\ SOON /!\
 ### Profile Managment pages
+<img src="preview/pc_preview.png"></img>
+<img src="preview/pe_preview.png"></img>
 
 
 ## ⚙️ Installation
