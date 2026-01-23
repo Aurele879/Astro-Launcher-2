@@ -8,7 +8,7 @@ import uuid
 import os
 import shutil
 import threading
-import time
+import random
 
 
 if not os.path.exists("instances"):
@@ -53,10 +53,18 @@ class Launcher:
         self.root.resizable(False, False)
         self.root.iconbitmap("assets/icon.ico")
         self.root.configure(fg_color="#1C1C1C")
-        self.bg_img = PhotoImage(file="assets/background.png")
-        self.bg = Label(self.root, image=self.bg_img)
+        
+        
+        self.bg_number = random.randint(0, 2)
+        if self.bg_number == 0: self.bg_img = PhotoImage(file="assets/background1.png")
+        elif self.bg_number == 1: self.bg_img = PhotoImage(file="assets/background2.png")
+        elif self.bg_number == 2: self.bg_img = PhotoImage(file="assets/background3.png")  
+        self.bg = Label(self.root, image=self.bg_img)      
+
         self.gear = Image.open("assets/settings.png")
         self.play = Image.open("assets/play.png")
+        self.creeper = Image.open("assets/login_logo.png")
+        self.block = Image.open("assets/block_logo.png")
         
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
@@ -196,14 +204,14 @@ class Launcher:
                                                                 width=500)
         
         self.profile_edition_label = customtkinter.CTkLabel(self.root, 
-                                                           text="Profile Edition",
+                                                           text="Profile Editor",
                                                            font=("Arial", 50, "bold"))
         
         self.profile_creation_label = customtkinter.CTkLabel(self.root, 
-                                                           text="Profile Creation",
+                                                           text="New Profile",
                                                            font=("Arial", 50, "bold"))
         self.username_label = customtkinter.CTkLabel(self.root, 
-                                                           text="Hello There !",
+                                                           text="Welcome !",
                                                            font=("Arial", 50, "bold"))
         self.username_entry = customtkinter.CTkEntry(self.root,
                                                                 height=50,
@@ -238,6 +246,16 @@ class Launcher:
                                                             height=50,
                                                             corner_radius=15,
                                                             width=500)
+        
+        self.creeper = customtkinter.CTkImage(light_image=self.creeper,
+                                        dark_image=self.creeper,
+                                        size=(200, 200))
+        self.creeper = customtkinter.CTkLabel(self.root, image=self.creeper, text="")
+        
+        self.block = customtkinter.CTkImage(light_image=self.block,
+                                        dark_image=self.block,
+                                        size=(200, 200))
+        self.block = customtkinter.CTkLabel(self.root, image=self.block, text="")
                         
     def clear_ui(self):
         self.gui_update()
@@ -259,19 +277,20 @@ class Launcher:
         self.username_entry.place_forget()
         self.username_label.place_forget()
         self.login_button.place_forget()
-        print("SCREEN CLEARED")
+        self.creeper.place_forget()
+        self.block.place_forget()
 
     def loading_page(self):
         self.clear_ui()
         self.bg.pack()
         self.loading_bar.place(relx=0.05, rely=0.882)
         self.loading_bar.start()
-        print("LOADING PAGE DISPLAYED")
         
     def login_page(self):
         self.clear_ui()
         self.bg.pack_forget()
         self.username_label.place(relx=0.5, rely=0.1, anchor="center")
+        self.creeper.place(relx=0.5, rely=0.37, anchor="center")
         self.username_entry.place(relx=0.5, rely=0.68, anchor="center")
         self.login_button.place(relx=0.5, rely=0.80, anchor="center")
         
@@ -285,7 +304,6 @@ class Launcher:
         self.settings_button.place(relx=0.67, rely=0.855)
         self.settings_button.configure(state = "disabled")
         self.play_button.place(relx=0.75, rely=0.855)
-        print("MAIN PAGE DISPLAYED")
         
     def settings_page(self):
         print("SETTINGS PAGE DISPLAYED")
@@ -314,11 +332,12 @@ class Launcher:
     def create_profile_page(self):
         self.clear_ui()
         self.bg.pack_forget()
-        self.profile_name_entry.place(relx=0.5, rely=0.36, anchor="center")
+        self.profile_name_entry.place(relx=0.5, rely=0.58, anchor="center")
         self.back_button.place(relx=0.75, rely=0.855)
         self.create_profile_button.place(relx=0.525, rely=0.855)
-        self.profile_creation_label.place(relx=0.5, rely=0.1, anchor="center") 
-        self.versions_combobox.place(relx=0.5, rely=0.48, anchor="center")       
+        self.profile_creation_label.place(relx=0.5, rely=0.1, anchor="center")
+        self.block.place(relx=0.5, rely=0.33, anchor="center")
+        self.versions_combobox.place(relx=0.5, rely=0.70, anchor="center")     
 
         self.installable_versions = self.get_versions()
         self.versions_combobox.configure(values=self.installable_versions)
