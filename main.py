@@ -9,7 +9,10 @@ import os
 import shutil
 import threading
 import random
+import configparser
 
+config = configparser.ConfigParser()
+file_content = config.read('config.ini')
 
 if not os.path.exists("instances"):
     os.mkdir("instances")
@@ -39,8 +42,7 @@ class Profile:
             "uuid": str(uuid.uuid4()),
             "token": ""}
         command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
-    
-        
+        app.save_last_profile()
         subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
         os._exit(0)
 
@@ -70,6 +72,7 @@ class Launcher:
         self.profile_list_by_name = []
         self.get_profile_list_by_name()
         self.username = None
+        self.last_used_profile = None
         
         self.setup_widgets()
         
@@ -182,16 +185,6 @@ class Launcher:
                                                             height=50,
                                                             corner_radius=20)
         
-        self.profile_dir_button = customtkinter.CTkButton(self.root,
-                                                            fg_color="#47316F",
-                                                            bg_color="#1C1C1C",
-                                                            hover_color="#342451",
-                                                            command=self.open_directory,
-                                                            text="OPEN DICTORY",
-                                                            width=500,
-                                                            height=50,
-                                                            corner_radius=20)
-        
         self.profile_name_entry = customtkinter.CTkEntry(self.root,
                                                                 height=50,
                                                                 placeholder_text="*profile name",
@@ -210,9 +203,44 @@ class Launcher:
         self.profile_creation_label = customtkinter.CTkLabel(self.root, 
                                                            text="New Profile",
                                                            font=("Arial", 50, "bold"))
+        
+        self.block = customtkinter.CTkImage(light_image=self.block,
+                                        dark_image=self.block,
+                                        size=(200, 200))
+        self.block = customtkinter.CTkLabel(self.root, image=self.block, text="")
+        
+        self.versions_combobox_variable = customtkinter.StringVar()
+        self.versions_combobox = customtkinter.CTkComboBox(self.root,
+                                                            variable=self.versions_combobox_variable,
+                                                            bg_color="#1C1C1C", 
+                                                            fg_color="#47316F", 
+                                                            button_color="#47316F", 
+                                                            border_color="#47316F", 
+                                                            text_color="white", 
+                                                            state="readonly", 
+                                                            height=50,
+                                                            corner_radius=15,
+                                                            width=500)
+            
+        self.profile_dir_button = customtkinter.CTkButton(self.root,
+                                                            fg_color="#47316F",
+                                                            bg_color="#1C1C1C",
+                                                            hover_color="#342451",
+                                                            command=self.open_directory,
+                                                            text="OPEN DICTORY",
+                                                            width=500,
+                                                            height=50,
+                                                            corner_radius=20)
+
         self.username_label = customtkinter.CTkLabel(self.root, 
                                                            text="Welcome !",
                                                            font=("Arial", 50, "bold"))
+        
+        self.creeper = customtkinter.CTkImage(light_image=self.creeper,
+                                        dark_image=self.creeper,
+                                        size=(200, 200))
+        self.creeper = customtkinter.CTkLabel(self.root, image=self.creeper, text="")
+        
         self.username_entry = customtkinter.CTkEntry(self.root,
                                                                 height=50,
                                                                 placeholder_text="*username",
@@ -233,29 +261,6 @@ class Launcher:
                                                             width=500,
                                                             height=50,
                                                             corner_radius=20)
-        
-        self.versions_combobox_variable = customtkinter.StringVar()
-        self.versions_combobox = customtkinter.CTkComboBox(self.root,
-                                                            variable=self.versions_combobox_variable,
-                                                            bg_color="#1C1C1C", 
-                                                            fg_color="#47316F", 
-                                                            button_color="#47316F", 
-                                                            border_color="#47316F", 
-                                                            text_color="white", 
-                                                            state="readonly", 
-                                                            height=50,
-                                                            corner_radius=15,
-                                                            width=500)
-        
-        self.creeper = customtkinter.CTkImage(light_image=self.creeper,
-                                        dark_image=self.creeper,
-                                        size=(200, 200))
-        self.creeper = customtkinter.CTkLabel(self.root, image=self.creeper, text="")
-        
-        self.block = customtkinter.CTkImage(light_image=self.block,
-                                        dark_image=self.block,
-                                        size=(200, 200))
-        self.block = customtkinter.CTkLabel(self.root, image=self.block, text="")
                         
     def clear_ui(self):
         self.gui_update()
@@ -293,11 +298,12 @@ class Launcher:
         self.creeper.place(relx=0.5, rely=0.37, anchor="center")
         self.username_entry.place(relx=0.5, rely=0.68, anchor="center")
         self.login_button.place(relx=0.5, rely=0.80, anchor="center")
+        self.set_username()
         
     def main_page(self):
         self.clear_ui()
         self.bg.pack()
-        self.profiles_combobox_variable.set("latest")
+        self.profiles_combobox_variable.set(self.get_profile())
         self.profiles_combobox.place(relx=0.05, rely=0.836)
         self.add_profile_button.place(relx=0.204, rely=0.836)
         self.edit_profile_button.place(relx=0.05, rely=0.91)
@@ -309,7 +315,6 @@ class Launcher:
         print("SETTINGS PAGE DISPLAYED")
         
     def edit_profile_page(self):
-        
         if self.profiles_combobox_variable.get() == "latest" :
             messagebox.showwarning("Invalid Action", "You can't edit an integrated profile.")
             return
@@ -339,10 +344,10 @@ class Launcher:
         self.block.place(relx=0.5, rely=0.33, anchor="center")
         self.versions_combobox.place(relx=0.5, rely=0.70, anchor="center")     
 
-        self.installable_versions = self.get_versions()
-        self.versions_combobox.configure(values=self.installable_versions)
-        self.latest_released_version = self.installable_versions[0]
-        self.versions_combobox.set(self.latest_released_version)
+        installable_versions = self.get_versions()
+        self.versions_combobox.configure(values=installable_versions)
+        latest_released_version = installable_versions[0]
+        self.versions_combobox.set(latest_released_version)
         
     def gui_update(self):
         self.profiles_combobox.configure(values=self.get_profile_list_by_name())
@@ -435,7 +440,27 @@ class Launcher:
         if len(self.username) < 1 or " " in self.username:
             messagebox.showerror("Error", "Invalid Username.")
         else:
+            self.save_last_username()
             self.main_page()
+            
+    def set_username(self):
+        saved_username = config['GUI']['last_used_nickname']
+        if saved_username != "Steve":
+            self.username_entry.insert(0, saved_username)
+            
+    def save_last_username(self):
+        config.set('GUI', 'last_used_nickname', self.username_entry.get())
+        with open("config.ini", 'w') as configfile:
+            config.write(configfile)
+            
+    def get_profile(self):
+        saved_profile = config['GUI']['last_used_profile']
+        return saved_profile
+            
+    def save_last_profile(self):
+        config.set('GUI', 'last_used_profile', self.profiles_combobox_variable.get())
+        with open("config.ini", 'w') as configfile:
+            config.write(configfile)
             
     
     def load_profiles_list(self):
