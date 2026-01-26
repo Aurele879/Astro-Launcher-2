@@ -29,7 +29,7 @@ You can use it to play any version of Minecraft with separed game files for each
 
 
 ## ⚙️ Installation
-To execute this app, you only need to download the last release in the dedicated section, next, extract the zip file and create a shortcut were you want the "launcher.exe" file to be.
+To execute this app, you only need to download the last release in the dedicated section, next, extract the zip file and create a shortcut were you want the "AstroLauncher 2.exe" file to be.
 
 ## 🚀 Usage
 Once your shortcut is placed in the place you want, you can launch it and enjoy !
