@@ -12,7 +12,6 @@ You can use it to play any version of Minecraft with separed game files for each
 | **GUI** | ✅ |
 | **Profiles files separation** | ✅ |
 | **Offline Login** | ✅ |
-| **Microsoft Login** | ❌ |
 | **Customizable settings** | ❌ |
 
 ### Login page
