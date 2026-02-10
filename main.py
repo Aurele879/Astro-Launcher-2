@@ -11,13 +11,18 @@ import threading
 import random
 import configparser
 
+"""
+Creation and reading of the configuration file, and creation of the profiles folder
+"""
 config = configparser.ConfigParser()
-file_content = config.read('config.ini')
+config.read('config.ini')
 
 if not os.path.exists("instances"):
     os.mkdir("instances")
 
-
+"""
+Class defining a profile
+"""
 class Profile:
     def __init__(self, name, version):
         self.name = name
@@ -34,7 +39,6 @@ class Profile:
         if self.found == False:
             minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
             self.launch()
-            return 0
 
     def launch(self):
         self.options = {
@@ -42,13 +46,18 @@ class Profile:
             "uuid": str(uuid.uuid4()),
             "token": ""}
         command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
-        app.save_last_profile()
+        app.save_last_used_profile()
         subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
         os._exit(0)
 
 
+"""
+Class defining the launcher itself : GUI and the interaction between this GUI and the BackEnd
+"""
 class Launcher:
     def __init__(self):
+        
+        #Window proprieties
         self.root = customtkinter.CTk()
         self.root.geometry("1000x550")
         self.root.title("Astro Launcher 2")
@@ -56,27 +65,28 @@ class Launcher:
         self.root.iconbitmap("assets/icon.ico")
         self.root.configure(fg_color="#1C1C1C")
         
-        
+        #Background selection
         self.bg_number = random.randint(0, 2)
         if self.bg_number == 0: self.bg_img = PhotoImage(file="assets/background1.png")
         elif self.bg_number == 1: self.bg_img = PhotoImage(file="assets/background2.png")
         elif self.bg_number == 2: self.bg_img = PhotoImage(file="assets/background3.png")  
         self.bg = Label(self.root, image=self.bg_img)      
 
-        self.gear = Image.open("assets/settings.png")
+        #Assets importation
         self.play = Image.open("assets/play.png")
-        self.creeper = Image.open("assets/login_logo.png")
+        self.creeper = Image.open("assets/off_login_logo.png")
         self.block = Image.open("assets/block_logo.png")
         
+        #Launcher variables
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
         self.get_profile_list_by_name()
         self.username = None
-        self.last_used_profile = None
         
+        #GUI Variables
         self.setup_widgets()
         
-    def setup_widgets(self):
+    def setup_widgets(self): #Filling widgets proprieties
         self.play_button = customtkinter.CTkButton(self.root, command=self.start_game,
                                                     fg_color="#47316F",
                                                     bg_color="#1C1C1C",
@@ -88,17 +98,6 @@ class Launcher:
                                                     image=customtkinter.CTkImage(self.play, size=(30, 30)),
                                                     compound="right",
                                                     font=("Arial", 25, "bold"))
-
-        self.settings_button = customtkinter.CTkButton(self.root,
-                                                        command=self.settings_page,
-                                                        image=customtkinter.CTkImage(self.gear, size=(30, 30)),
-                                                        fg_color="#363636",
-                                                        bg_color="#1C1C1C",
-                                                        hover_color="#342451",
-                                                        text="",
-                                                        width=50,
-                                                        height=50,
-                                                        corner_radius=20)
 
         self.add_profile_button = customtkinter.CTkButton(self.root,
                                                             command=self.create_profile_page,
@@ -227,12 +226,12 @@ class Launcher:
                                                             bg_color="#1C1C1C",
                                                             hover_color="#342451",
                                                             command=self.open_directory,
-                                                            text="OPEN DICTORY",
+                                                            text="OPEN DIRECTORY",
                                                             width=500,
                                                             height=50,
                                                             corner_radius=20)
 
-        self.username_label = customtkinter.CTkLabel(self.root, 
+        self.connection_label = customtkinter.CTkLabel(self.root, 
                                                            text="Welcome !",
                                                            font=("Arial", 50, "bold"))
         
@@ -252,20 +251,20 @@ class Launcher:
                                                                 corner_radius=15,
                                                                 width=500)
         
-        self.login_button = customtkinter.CTkButton(self.root,
+        self.off_login_button = customtkinter.CTkButton(self.root,
                                                             fg_color="#47316F",
                                                             bg_color="#1C1C1C",
                                                             hover_color="#342451",
-                                                            command=self.login,
+                                                            command=self.off_login,
                                                             text="LOGIN",
                                                             width=500,
                                                             height=50,
                                                             corner_radius=20)
+        
                         
-    def clear_ui(self):
+    def clear_ui(self): #Clearing the widgets in the window
         self.gui_update()
         self.play_button.place_forget()
-        self.settings_button.place_forget()
         self.add_profile_button.place_forget()
         self.profiles_combobox.place_forget()
         self.edit_profile_button.place_forget()
@@ -280,41 +279,37 @@ class Launcher:
         self.versions_combobox.place_forget()
         self.profile_creation_label.place_forget()
         self.username_entry.place_forget()
-        self.username_label.place_forget()
-        self.login_button.place_forget()
+        self.connection_label.place_forget()
+        self.off_login_button.place_forget()
         self.creeper.place_forget()
         self.block.place_forget()
 
-    def loading_page(self):
+    def loading_page(self): #Displaying loading page widgets in the window
         self.clear_ui()
         self.bg.pack()
         self.loading_bar.place(relx=0.05, rely=0.882)
         self.loading_bar.start()
         
-    def login_page(self):
+    def off_login_page(self): #Displaying offline login page widgets in the window
         self.clear_ui()
         self.bg.pack_forget()
-        self.username_label.place(relx=0.5, rely=0.1, anchor="center")
+        self.connection_label.place(relx=0.5, rely=0.1, anchor="center")
         self.creeper.place(relx=0.5, rely=0.37, anchor="center")
         self.username_entry.place(relx=0.5, rely=0.68, anchor="center")
-        self.login_button.place(relx=0.5, rely=0.80, anchor="center")
+        self.off_login_button.place(relx=0.5, rely=0.80, anchor="center")
         self.set_username()
         
-    def main_page(self):
+    def main_page(self): #Displaying main page widgets in the window
         self.clear_ui()
         self.bg.pack()
-        self.profiles_combobox_variable.set(self.get_profile())
+        self.profiles_combobox_variable.set(self.get_last_used_profile())
         self.profiles_combobox.place(relx=0.05, rely=0.836)
         self.add_profile_button.place(relx=0.204, rely=0.836)
         self.edit_profile_button.place(relx=0.05, rely=0.91)
-        self.settings_button.place(relx=0.67, rely=0.855)
-        self.settings_button.configure(state = "disabled")
+        #self.settings_button.place(relx=0.67, rely=0.855)
         self.play_button.place(relx=0.75, rely=0.855)
         
-    def settings_page(self):
-        print("SETTINGS PAGE DISPLAYED")
-        
-    def edit_profile_page(self):
+    def edit_profile_page(self): #Displaying profile edition page widgets in the window
         if self.profiles_combobox_variable.get() == "latest" :
             messagebox.showwarning("Invalid Action", "You can't edit an integrated profile.")
             return
@@ -334,7 +329,7 @@ class Launcher:
         self.versions_combobox.set(self.profile.version)
         self.profile_name_entry.insert(0, self.profile.name)
         
-    def create_profile_page(self):
+    def create_profile_page(self): #Displaying profile creation page widgets in the window
         self.clear_ui()
         self.bg.pack_forget()
         self.profile_name_entry.place(relx=0.5, rely=0.58, anchor="center")
@@ -348,26 +343,26 @@ class Launcher:
         self.versions_combobox.configure(values=installable_versions)
         latest_released_version = installable_versions[0]
         self.versions_combobox.set(latest_released_version)
-        
-    def gui_update(self):
+    
+    def gui_update(self): #Filling profiles combobox and clearing profile name entry
         self.profiles_combobox.configure(values=self.get_profile_list_by_name())
         self.profile_name_entry.delete(0, customtkinter.END)
         
-    def display(self):
-        self.login_page()
+    def display(self): #Displaying the window on the offline login page
+        self.off_login_page()
         self.root.mainloop()
         
     def get_versions(self):
-        self.versions_list = []
+        versions_list = []
         for version in minecraft_launcher_lib.utils.get_version_list():
-            if version["type"] == "release": self.versions_list.append(version["id"])
-        return self.versions_list
+            if version["type"] == "release": versions_list.append(version["id"])
+        return versions_list
             
     def get_available_versions(self, profile):
-        self.available_versions_list = []
+        available_versions_list = []
         for version in minecraft_launcher_lib.utils.get_available_versions(profile.profile_directory):
-            if version["type"] == "release": self.available_versions_list.append(version["id"])
-        return self.available_versions_list
+            if version["type"] == "release": available_versions_list.append(version["id"])
+        return available_versions_list
     
     def create_profile(self):
         if self.profile_name_entry.get() == "" or " " in self.profile_name_entry.get():
@@ -383,7 +378,7 @@ class Launcher:
         new_name = self.profile_name_entry.get()
         new_version = self.versions_combobox.get()
 
-        if not new_name or (new_name in self.get_profile_list_by_name() and new_name != old_name):
+        if not new_name or (new_name in self.get_profile_list_by_name() and new_name != old_name) or new_name.endswith("."):
             messagebox.showerror("Error", "Invalid Name.")
             return 1
 
@@ -401,7 +396,10 @@ class Launcher:
             self.profile_list[target_index] = Profile(new_name, new_version)
             
             self.save_profiles()
+            self.profiles_combobox_variable.set(new_name)
+            self.save_last_used_profile()
             self.main_page()
+            
 
     def delete_profile(self):
         profile_name = self.profiles_combobox.get()
@@ -433,9 +431,8 @@ class Launcher:
     def save_profiles(self):
         with open("profiles.dat", "wb") as f:
             pickle.dump(self.profile_list, f)
-        self.profile_list = self.load_profiles_list()
         
-    def login(self):
+    def off_login(self):
         self.username = self.username_entry.get()
         if len(self.username) < 1 or " " in self.username:
             messagebox.showerror("Error", "Invalid Username.")
@@ -453,11 +450,11 @@ class Launcher:
         with open("config.ini", 'w') as configfile:
             config.write(configfile)
             
-    def get_profile(self):
+    def get_last_used_profile(self):
         saved_profile = config['GUI']['last_used_profile']
         return saved_profile
             
-    def save_last_profile(self):
+    def save_last_used_profile(self):
         config.set('GUI', 'last_used_profile', self.profiles_combobox_variable.get())
         with open("config.ini", 'w') as configfile:
             config.write(configfile)
@@ -472,12 +469,9 @@ class Launcher:
         
     def get_profile_list_by_name(self):
         self.profile_list_by_name = []
-        if len(self.profile_list) == 0: 
-            return self.profile_list_by_name
-        else:
-            for element in self.profile_list:
-                self.profile_list_by_name.append(element.name)
-            return self.profile_list_by_name
+        for element in self.profile_list:
+            self.profile_list_by_name.append(element.name)
+        return self.profile_list_by_name
         
     def get_profile_from_name(self, name):
         for i in range(len(self.profile_list_by_name)):
@@ -486,16 +480,19 @@ class Launcher:
     
     def start_game(self):
         self.loading_page()
-        self.selected_profile_name = self.profiles_combobox_variable.get()
-        self.selected_profile = self.get_profile_from_name(self.selected_profile_name)
+        selected_profile_name = self.profiles_combobox_variable.get()
+        selected_profile = self.get_profile_from_name(selected_profile_name)
         if self.profiles_combobox.get() == "latest":
             last_version = self.get_versions()
-            self.selected_profile = Profile("latest", last_version[0])
-        self.selected_profile.username = self.username
-        thread = threading.Thread(target=self.selected_profile.launch_sequence, daemon=True)
-        thread.start()
-        
+            selected_profile = Profile("latest", last_version[0])
+        selected_profile.username = self.username
+        thread = threading.Thread(target=selected_profile.launch_sequence, daemon=True)
+        thread.start()  
         
 
-app = Launcher()
-app.display()
+"""
+Entry Point
+"""
+if __name__ == "__main__":
+    app = Launcher()
+    app.display()
