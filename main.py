@@ -352,19 +352,19 @@ class Launcher:
         self.off_login_page()
         self.root.mainloop()
         
-    def get_versions(self):
+    def get_versions(self): #Returns all the versions of the game
         versions_list = []
         for version in minecraft_launcher_lib.utils.get_version_list():
             if version["type"] == "release": versions_list.append(version["id"])
         return versions_list
             
-    def get_available_versions(self, profile):
+    def get_available_versions(self, profile): #Returns all the versions of the game and the ones installed
         available_versions_list = []
         for version in minecraft_launcher_lib.utils.get_available_versions(profile.profile_directory):
             if version["type"] == "release": available_versions_list.append(version["id"])
         return available_versions_list
     
-    def create_profile(self):
+    def create_profile(self): #Create a profile
         if self.profile_name_entry.get() == "" or " " in self.profile_name_entry.get():
             messagebox.showerror("Error", "Invalid Name.")
             return 1
@@ -373,7 +373,7 @@ class Launcher:
         self.save_profiles()
         self.main_page()
 
-    def edit_profile(self):
+    def edit_profile(self): #Edit a profile
         old_name = self.profiles_combobox.get()
         new_name = self.profile_name_entry.get()
         new_version = self.versions_combobox.get()
@@ -401,7 +401,7 @@ class Launcher:
             self.main_page()
             
 
-    def delete_profile(self):
+    def delete_profile(self): #Delete a profile
         profile_name = self.profiles_combobox.get()
         if not messagebox.askyesno("Profile Removal", f"Are you sure you want to delete '{profile_name}' and all its data?"):
             return 1
@@ -422,17 +422,17 @@ class Launcher:
         self.main_page()
         messagebox.showinfo("Profile Removal", f"Profile '{profile_name}' has been deleted.")
         
-    def open_directory(self):
+    def open_directory(self): #Opens the profile's directory
         profile_name = self.profiles_combobox.get()
         profile = self.get_profile_from_name(profile_name)
         path = os.path.abspath(profile.profile_directory)
         os.startfile(path)
         
-    def save_profiles(self):
+    def save_profiles(self): #Save a profile
         with open("profiles.dat", "wb") as f:
             pickle.dump(self.profile_list, f)
         
-    def off_login(self):
+    def off_login(self): #Offline authentification
         self.username = self.username_entry.get()
         if len(self.username) < 1 or " " in self.username:
             messagebox.showerror("Error", "Invalid Username.")
@@ -440,45 +440,45 @@ class Launcher:
             self.save_last_username()
             self.main_page()
             
-    def set_username(self):
+    def set_username(self): #Set latest username in the entry
         saved_username = config['GUI']['last_used_nickname']
         if saved_username != "Steve":
             self.username_entry.insert(0, saved_username)
             
-    def save_last_username(self):
+    def save_last_username(self): #Save the last used username
         config.set('GUI', 'last_used_nickname', self.username_entry.get())
         with open("config.ini", 'w') as configfile:
             config.write(configfile)
             
-    def get_last_used_profile(self):
+    def get_last_used_profile(self): #Returns the last used profile
         saved_profile = config['GUI']['last_used_profile']
         return saved_profile
             
-    def save_last_used_profile(self):
+    def save_last_used_profile(self): #Save the last used profile
         config.set('GUI', 'last_used_profile', self.profiles_combobox_variable.get())
         with open("config.ini", 'w') as configfile:
             config.write(configfile)
             
     
-    def load_profiles_list(self):
+    def load_profiles_list(self): #Load the stored profiles list
         filename = "profiles.dat"
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return []
         with open(filename, "rb") as f:
             return pickle.load(f)
         
-    def get_profile_list_by_name(self):
+    def get_profile_list_by_name(self): #Returns a list with all the profiles's names
         self.profile_list_by_name = []
         for element in self.profile_list:
             self.profile_list_by_name.append(element.name)
         return self.profile_list_by_name
         
-    def get_profile_from_name(self, name):
+    def get_profile_from_name(self, name): #Returns a profile from its name
         for i in range(len(self.profile_list_by_name)):
             if name == self.profile_list[i].name:
                 return self.profile_list[i]
     
-    def start_game(self):
+    def start_game(self): #Start the game files download and launch
         self.loading_page()
         selected_profile_name = self.profiles_combobox_variable.get()
         selected_profile = self.get_profile_from_name(selected_profile_name)
