@@ -10,15 +10,7 @@ import shutil
 import threading
 import random
 import configparser
-
-"""
-Creation and reading of the configuration file, and creation of the profiles folder
-"""
-config = configparser.ConfigParser()
-config.read('config.ini')
-
-if not os.path.exists("instances"):
-    os.mkdir("instances")
+import hashlib
 
 """
 Class defining a profile
@@ -43,10 +35,9 @@ class Profile:
     def launch(self):
         self.options = {
             "username": self.username,
-            "uuid": str(uuid.uuid4()),
+            "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
             "token": ""}
         command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
-        app.save_last_used_profile()
         subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
         os._exit(0)
 
@@ -140,6 +131,10 @@ class Launcher:
                                                             fg_color="#474747",
                                                             bg_color="#1C1C1C",
                                                             progress_color="#47316F")
+        
+        self.loading_label = customtkinter.CTkLabel(self.root, 
+                                                           text="Downloading game files ...",
+                                                           font=("Arial", 15, "bold"))
 
         self.back_button = customtkinter.CTkButton(self.root,
                                                         command=self.main_page,
@@ -283,11 +278,13 @@ class Launcher:
         self.off_login_button.place_forget()
         self.creeper.place_forget()
         self.block.place_forget()
+        self.loading_label.place_forget()
 
     def loading_page(self): #Displaying loading page widgets in the window
         self.clear_ui()
         self.bg.pack()
         self.loading_bar.place(relx=0.05, rely=0.882)
+        self.loading_label.place(relx=0.05, rely=0.92)
         self.loading_bar.start()
         
     def off_login_page(self): #Displaying offline login page widgets in the window
@@ -306,7 +303,6 @@ class Launcher:
         self.profiles_combobox.place(relx=0.05, rely=0.836)
         self.add_profile_button.place(relx=0.204, rely=0.836)
         self.edit_profile_button.place(relx=0.05, rely=0.91)
-        #self.settings_button.place(relx=0.67, rely=0.855)
         self.play_button.place(relx=0.75, rely=0.855)
         
     def edit_profile_page(self): #Displaying profile edition page widgets in the window
@@ -365,12 +361,14 @@ class Launcher:
         return available_versions_list
     
     def create_profile(self): #Create a profile
-        if self.profile_name_entry.get() == "" or " " in self.profile_name_entry.get():
+        if self.profile_name_entry.get() == "" or " " in self.profile_name_entry.get() or self.profile_name_entry.get() in self.profile_list_by_name:
             messagebox.showerror("Error", "Invalid Name.")
             return 1
         os.mkdir(f"instances/{self.profile_name_entry.get()}")
         self.profile_list.append(Profile(self.profile_name_entry.get(), self.versions_combobox.get()))
         self.save_profiles()
+        self.profiles_combobox_variable.set(self.profile_name_entry.get())
+        self.save_last_used_profile()
         self.main_page()
 
     def edit_profile(self): #Edit a profile
@@ -419,6 +417,11 @@ class Launcher:
 
         self.save_profiles()
         self.gui_update()
+        if len(self.profile_list_by_name) < 1:
+            self.profiles_combobox_variable.set("latest")
+        else:
+            self.profiles_combobox_variable.set(self.profile_list_by_name[0])
+        self.save_last_used_profile()
         self.main_page()
         messagebox.showinfo("Profile Removal", f"Profile '{profile_name}' has been deleted.")
         
@@ -486,6 +489,7 @@ class Launcher:
             last_version = self.get_versions()
             selected_profile = Profile("latest", last_version[0])
         selected_profile.username = self.username
+        self.save_last_used_profile()
         thread = threading.Thread(target=selected_profile.launch_sequence, daemon=True)
         thread.start()  
         
@@ -494,5 +498,11 @@ class Launcher:
 Entry Point
 """
 if __name__ == "__main__":
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    if not os.path.exists("instances"):
+        os.mkdir("instances")
+    
     app = Launcher()
     app.display()
