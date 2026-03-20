@@ -12,7 +12,7 @@ You can use it to play any version of Minecraft with separed game files for each
 | **GUI** | ✅ |
 | **Profiles files separation** | ✅ |
 | **Offline Login** | ✅ |
-| **Customizable settings** | ❌ |
+| **Customizable settings** | ✅ |
 
 ### Login page
 <img src="preview/login_preview.png"></img>
