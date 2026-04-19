@@ -20,11 +20,9 @@ Rich Presence setup
 """
 presence = Presence("1495473776043757819")
 
-def discord_presence_worker():
-        # Initialiser la connexion Discord
+def discord_presence_worker(): #Function setting up the link with the discord API
         presence.connect()
         
-        # Mettre à jour la présence
         presence.update(
             state="Idle",
             large_text="Astro Launcher 2",
@@ -33,7 +31,7 @@ def discord_presence_worker():
         while True:
             time.sleep(15)
 
-def update_discord_presence(state):
+def update_discord_presence(state): #Function used to update the activity of the user
     presence.update(state=state)
     
 thread = threading.Thread(target=discord_presence_worker, daemon=True)
@@ -68,14 +66,11 @@ class Profile:
             "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
         command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
         
-        # Lancer Minecraft
         process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
         
-        # Cacher la fenêtre
         app.root.withdraw()
         update_discord_presence("Playing Minecraft")
         
-        # Attendre que Minecraft se ferme dans un thread séparé
         wait_thread = threading.Thread(target=self.wait_minecraft_close, args=(process,), daemon=True)
         wait_thread.start()
     
