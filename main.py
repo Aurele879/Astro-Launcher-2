@@ -33,7 +33,10 @@ def discord_presence_worker(): #Function setting up the link with the discord AP
             time.sleep(15)
 
 def update_discord_presence(state): #Function used to update the activity of the user
-    presence.update(state=state)
+    try:
+        presence.update(state=state)
+    except Exception:
+        pass
     
 thread = threading.Thread(target=discord_presence_worker, daemon=True)
 thread.start()
@@ -42,14 +45,14 @@ thread.start()
 Class defining a profile
 """
 class Profile:
-    def __init__(self, name, version):
+    def __init__(self, name, version): #Initialize a profile with default launch settings
         self.name = name
         self.version = version
         self.profile_directory = "instances/" + self.name
         self.username = "Steve"
         self.ram = "2"
         
-    def launch_sequence(self):
+    def launch_sequence(self): #Install missing version if needed, then launch
         self.found = False
         for element in minecraft_launcher_lib.utils.get_installed_versions(self.profile_directory):
             if element["id"] == self.version:
@@ -59,23 +62,29 @@ class Profile:
             minecraft_launcher_lib.install.install_minecraft_version(self.version, self.profile_directory)
             self.launch()
 
-    def launch(self):
-        self.options = {
-            "username": self.username,
-            "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
-            "token": "",
-            "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
-        command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
-        
-        process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
-        
-        app.root.withdraw()
-        update_discord_presence("Playing Minecraft")
-        
-        wait_thread = threading.Thread(target=self.wait_minecraft_close, args=(process,), daemon=True)
-        wait_thread.start()
-    
-    def wait_minecraft_close(self, process):
+    def launch(self): #Build launch command and start Minecraft process
+        try:
+            self.options = {
+                "username": self.username,
+                "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
+                "token": "",
+                "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
+            command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
+            
+            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
+            
+            app.root.withdraw()
+            update_discord_presence("Playing Minecraft")
+            
+            wait_thread = threading.Thread(target=self.wait_minecraft_close, args=(process,), daemon=True)
+            wait_thread.start()
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while launching the game: {str(e)}")
+            app.root.deiconify()
+            app.main_page()
+            update_discord_presence("Idle")
+
+    def wait_minecraft_close(self, process): #Restore launcher UI when game closes
         process.wait()
         time.sleep(1)
         app.root.deiconify()
@@ -87,9 +96,8 @@ class Profile:
 Class defining the launcher itself : GUI and the interaction between this GUI and the BackEnd
 """
 class Launcher:
-    def __init__(self):
+    def __init__(self): #Initialize launcher window, assets, state, and widgets
         
-        #Window proprieties
         self.root = customtkinter.CTk()
         self.root.geometry("1000x550")
         self.root.title("Astro Launcher 2")
@@ -97,25 +105,21 @@ class Launcher:
         self.root.iconbitmap("assets/icon.ico")
         self.root.configure(fg_color="#1C1C1C")
         
-        #Background selection
         self.bg_number = random.randint(0, 2)
         if self.bg_number == 0: self.bg_img = PhotoImage(file="assets/background1.png")
         elif self.bg_number == 1: self.bg_img = PhotoImage(file="assets/background2.png")
         elif self.bg_number == 2: self.bg_img = PhotoImage(file="assets/background3.png")  
         self.bg = Label(self.root, image=self.bg_img)      
 
-        #Assets importation
         self.play = Image.open("assets/play.png")
         self.creeper = Image.open("assets/off_login_logo.png")
         self.block = Image.open("assets/block_logo.png")
         
-        #Launcher variables
         self.profile_list = self.load_profiles_list()
         self.profile_list_by_name = []
         self.get_profile_list_by_name()
         self.username = None
         
-        #GUI Variables
         self.setup_widgets()
         
     def setup_widgets(self): #Filling widgets proprieties
@@ -266,6 +270,17 @@ class Launcher:
                                                             height=50,
                                                             corner_radius=15,
                                                             width=500)
+
+        self.add_loader_button = customtkinter.CTkButton(self.root,
+                                  command=self.open_loader_selection_window,
+                                  fg_color="#47316F",
+                                  bg_color="#1C1C1C",
+                                  hover_color="#342451",
+                                  text="+",
+                                  width=50,
+                                  height=50,
+                                  corner_radius=15,
+                                  font=("Arial", 30, "bold"))
             
         self.profile_dir_button = customtkinter.CTkButton(self.root,
                                                             fg_color="#47316F",
@@ -352,6 +367,7 @@ class Launcher:
         self.profile_name_entry.place_forget()
         self.profile_edition_label.place_forget()
         self.versions_combobox.place_forget()
+        self.add_loader_button.place_forget()
         self.profile_creation_label.place_forget()
         self.username_entry.place_forget()
         self.connection_label.place_forget()
@@ -453,7 +469,9 @@ class Launcher:
         self.profile_dir_button.place(relx=0.5, rely=0.60, anchor="center")
         self.profile_name_entry.place(relx=0.5, rely=0.36, anchor="center")
         self.profile_edition_label.place(relx=0.5, rely=0.1, anchor="center")
-        self.versions_combobox.place(relx=0.5, rely=0.48, anchor="center")
+        self.versions_combobox.configure(width=442)
+        self.versions_combobox.place(relx=0.25, rely=0.48, anchor="w")
+        self.add_loader_button.place(relx=0.7, rely=0.48, anchor="w")
         
         self.profile = self.get_profile_from_name(self.profiles_combobox.get())
         self.available_versions = self.get_available_versions(self.profile)
@@ -470,6 +488,7 @@ class Launcher:
         self.create_profile_button.place(relx=0.525, rely=0.855)
         self.profile_creation_label.place(relx=0.5, rely=0.1, anchor="center")
         self.block.place(relx=0.5, rely=0.33, anchor="center")
+        self.versions_combobox.configure(width=500)
         self.versions_combobox.place(relx=0.5, rely=0.70, anchor="center")     
 
         installable_versions = self.get_versions()
@@ -495,15 +514,123 @@ class Launcher:
     def get_available_versions(self, profile): #Returns all the versions of the game and the ones installed
         available_versions_list = []
         for version in minecraft_launcher_lib.utils.get_available_versions(profile.profile_directory):
-            if version["type"] == "release": available_versions_list.append(version["id"])
+            if version["type"] in ["release", "forge", "neoforge", "fabric"]:
+                available_versions_list.append(version["id"])
         return available_versions_list
+
+    def open_loader_selection_window(self): #Open modal to choose and install a mod loader
+
+        if hasattr(self, "loader_window") and self.loader_window.winfo_exists():
+            self.loader_window.focus()
+            return
     
+        installed_versions = minecraft_launcher_lib.utils.get_installed_versions(self.profile.profile_directory)
+        est_installee = any(version.get("id") == self.versions_combobox.get() for version in installed_versions)
+        if not est_installee:
+            messagebox.showerror("Error", "The selected version is not installed. Please install it before adding a mod loader.")
+            return
+
+        self.loader_window = customtkinter.CTkToplevel(self.root)
+        self.loader_window.title("Install A ModLoader")
+        self.loader_window.geometry("280x220")
+        self.loader_window.resizable(False, False)
+        self.loader_window.configure(fg_color="#1C1C1C")
+        self.loader_window.transient(self.root)
+        self.loader_window.grab_set()
+
+        loader_label = customtkinter.CTkLabel(self.loader_window,
+                                              text="Choose a mod loader",
+                                              font=("Arial", 20, "bold"))
+        loader_label.place(relx=0.5, rely=0.14, anchor="center")
+
+        forge_button = customtkinter.CTkButton(self.loader_window,
+                                               text="Forge",
+                                               width=180,
+                                               command=lambda: self.install_forge(self.versions_combobox.get(), self.profile.profile_directory),
+                                               fg_color="#47316F",
+                                               hover_color="#342451")
+        forge_button.place(relx=0.5, rely=0.35, anchor="center")
+
+        neoforge_button = customtkinter.CTkButton(self.loader_window,
+                                                  text="NeoForge",
+                                                  width=180,
+                                                  command=lambda: self.install_neoforge(self.versions_combobox.get(), self.profile.profile_directory),
+                                                  fg_color="#47316F",
+                                                  hover_color="#342451")
+        neoforge_button.place(relx=0.5, rely=0.55, anchor="center")
+
+        fabric_button = customtkinter.CTkButton(self.loader_window,
+                                                text="Fabric",
+                                                width=180,
+                                                command=lambda: self.install_fabric(self.versions_combobox.get(), self.profile.profile_directory),
+                                                fg_color="#47316F",
+                                                hover_color="#342451")
+        fabric_button.place(relx=0.5, rely=0.75, anchor="center")
+
+    def update_modded_profile(self, version, modloader): #Refresh versions list and select installed modded version
+        self.available_versions = self.get_available_versions(self.profile)
+        self.versions_combobox.configure(values=self.available_versions)
+
+        modded_version = None
+        for element in self.available_versions:
+            lowered = element.lower()
+            if version in element and modloader in lowered:
+                modded_version = element
+                break
+
+        if modded_version is not None:
+            self.versions_combobox.set(modded_version)
+
+    def install_forge(self, version: str, dir: str): #Find and install Forge for the selected version
+        try:
+            forge_version = minecraft_launcher_lib.forge.find_forge_version(version)
+            if forge_version is None:
+                raise ValueError(f"No Forge version was found for Minecraft {version}.")
+            
+            print(f"Installing Forge ({forge_version}) in {dir}...")
+            forge =  minecraft_launcher_lib.mod_loader.get_mod_loader("forge")
+            forge.install(version, dir)
+            print("Forge installation completed.")
+            self.update_modded_profile(version, "forge")
+        except Exception as e:
+            messagebox.showerror("Installation Error", f"Unable to install Forge:\n{str(e)}")
+        self.loader_window.destroy()
+
+    def install_neoforge(self, version: str, dir: str): #Find and install NeoForge for the selected version
+        try:
+            neoforge_version = minecraft_launcher_lib.neoforge.find_neoforge_version(version)
+            if neoforge_version is None:
+                raise ValueError(f"No NeoForge version was found for Minecraft {version}.")
+
+            print(f"Installing NeoForge ({neoforge_version}) in {dir}...")
+            neoforge =  minecraft_launcher_lib.mod_loader.get_mod_loader("neoforge")
+            neoforge.install(version, dir)
+            print("NeoForge installation completed.")
+            self.update_modded_profile(version, "neoforge")
+        except Exception as e:
+            messagebox.showerror("Installation Error", f"Unable to install NeoForge:\n{str(e)}")
+        self.loader_window.destroy()
+
+    def install_fabric(self, version: str, dir: str): #Install Fabric for the selected version
+        try:
+            print(f"Installing Fabric for Minecraft {version} in {dir}...")
+            fabric =  minecraft_launcher_lib.mod_loader.get_mod_loader("fabric")
+            fabric.install(version, dir)
+            print("Fabric installation completed.")
+            self.update_modded_profile(version, "fabric")
+        except Exception as e:
+            messagebox.showerror("Installation Error", f"Unable to install Fabric:\n{str(e)}")
+        self.loader_window.destroy()
+
     def verify_str(self, string_to_verify): #Verify if a string is valid for a profile name (not empty and only contains allowed characters)
         allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
         if string_to_verify == "": return False
         for element in string_to_verify:
             if element not in allowed_chars:
                 return False
+        if string_to_verify == "none":
+            return False
+
         return True
     
     def create_dummy_launcher_config(self, profile_directory): #Create a dummy launcher_profiles.json to avoid errors when launching the game for the first time
@@ -537,13 +664,16 @@ class Launcher:
         if not self.verify_str(self.profile_name_entry.get()) or self.profile_name_entry.get() in self.profile_list_by_name:
             messagebox.showerror("Error", "Invalid Name.")
             return 1
-        os.mkdir(f"instances/{self.profile_name_entry.get()}")
-        self.create_dummy_launcher_config(f"instances/{self.profile_name_entry.get()}")
-        self.profile_list.append(Profile(self.profile_name_entry.get(), self.versions_combobox.get()))
-        self.save_profiles()
-        self.profiles_combobox_variable.set(self.profile_name_entry.get())
-        self.save_last_used_profile()
-        self.main_page()
+        try:
+            os.mkdir(f"instances/{self.profile_name_entry.get()}")
+            self.create_dummy_launcher_config(f"instances/{self.profile_name_entry.get()}")
+            self.profile_list.append(Profile(self.profile_name_entry.get(), self.versions_combobox.get()))
+            self.save_profiles()
+            self.profiles_combobox_variable.set(self.profile_name_entry.get())
+            self.save_last_used_profile()
+            self.main_page()
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to create profile:\n{str(e)}")
 
     def edit_profile(self): #Edit a profile
         old_name = self.profiles_combobox.get()
@@ -561,16 +691,19 @@ class Launcher:
                 break
 
         if target_index != -1:
-            old_profile = self.profile_list[target_index]
-            old_dir = old_profile.profile_directory
-            new_dir = os.path.join("instances", new_name)
-            os.rename(old_dir, new_dir)
-            self.profile_list[target_index] = Profile(new_name, new_version)
-            
-            self.save_profiles()
-            self.profiles_combobox_variable.set(new_name)
-            self.save_last_used_profile()
-            self.main_page()
+            try:
+                old_profile = self.profile_list[target_index]
+                old_dir = old_profile.profile_directory
+                new_dir = os.path.join("instances", new_name)
+                os.rename(old_dir, new_dir)
+                self.profile_list[target_index] = Profile(new_name, new_version)
+
+                self.save_profiles()
+                self.profiles_combobox_variable.set(new_name)
+                self.save_last_used_profile()
+                self.main_page()
+            except Exception as e:
+                messagebox.showerror("Error", f"Unable to edit profile:\n{str(e)}")
             
 
     def delete_profile(self): #Delete a profile
@@ -585,9 +718,13 @@ class Launcher:
                 break
 
         if target_index != -1:
-            profile_to_delete = self.profile_list[target_index]
-            shutil.rmtree(profile_to_delete.profile_directory)
-            self.profile_list.pop(target_index)
+            try:
+                profile_to_delete = self.profile_list[target_index]
+                shutil.rmtree(profile_to_delete.profile_directory)
+                self.profile_list.pop(target_index)
+            except Exception as e:
+                messagebox.showerror("Error", f"Unable to delete profile:\n{str(e)}")
+                return 1
 
         self.save_profiles()
         self.gui_update()
@@ -600,14 +737,21 @@ class Launcher:
         messagebox.showinfo("Profile Removal", f"Profile '{profile_name}' has been deleted.")
         
     def open_directory(self): #Opens the profile's directory
-        profile_name = self.profiles_combobox.get()
-        profile = self.get_profile_from_name(profile_name)
-        path = os.path.abspath(profile.profile_directory)
-        os.startfile(path)
+        try:
+            profile_name = self.profiles_combobox.get()
+            profile = self.get_profile_from_name(profile_name)
+            path = os.path.abspath(profile.profile_directory)
+            os.startfile(path)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to open profile directory:\n{str(e)}")
         
     def save_profiles(self): #Save a profile
-        with open("profiles.dat", "wb") as f:
-            pickle.dump(self.profile_list, f)
+        try:
+            with open("profiles.dat", "wb") as f:
+                pickle.dump(self.profile_list, f)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to save profiles:\n{str(e)}")
+            raise
         
     def off_login(self): #Offline authentification
         self.username = self.username_entry.get()
@@ -623,26 +767,36 @@ class Launcher:
             self.username_entry.insert(0, saved_username)
             
     def save_last_username(self): #Save the last used username
-        config.set('GUI', 'last_used_nickname', self.username_entry.get())
-        with open("config.ini", 'w') as configfile:
-            config.write(configfile)
+        try:
+            config.set('GUI', 'last_used_nickname', self.username_entry.get())
+            with open("config.ini", 'w') as configfile:
+                config.write(configfile)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to save username:\n{str(e)}")
             
     def get_last_used_profile(self): #Returns the last used profile
         saved_profile = config['GUI']['last_used_profile']
         return saved_profile
             
     def save_last_used_profile(self): #Save the last used profile
-        config.set('GUI', 'last_used_profile', self.profiles_combobox_variable.get())
-        with open("config.ini", 'w') as configfile:
-            config.write(configfile)
+        try:
+            config.set('GUI', 'last_used_profile', self.profiles_combobox_variable.get())
+            with open("config.ini", 'w') as configfile:
+                config.write(configfile)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to save last used profile:\n{str(e)}")
             
     
     def load_profiles_list(self): #Load the stored profiles list
         filename = "profiles.dat"
         if not os.path.exists(filename) or os.path.getsize(filename) == 0:
             return []
-        with open(filename, "rb") as f:
-            return pickle.load(f)
+        try:
+            with open(filename, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            messagebox.showerror("Error", f"Unable to load profiles:\n{str(e)}")
+            return []
         
     def get_profile_list_by_name(self): #Returns a list with all the profiles's names
         self.profile_list_by_name = []
@@ -656,7 +810,6 @@ class Launcher:
                 return self.profile_list[i]
     
     def start_game(self): #Start the game files download and launch
-        
         selected_profile_name = self.profiles_combobox_variable.get()
         if self.profiles_combobox.get() == "none":
             messagebox.showerror("Error", "Create a profile first !")
