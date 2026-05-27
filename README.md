@@ -1,9 +1,11 @@
 ## 🪐 Astro Launcher 2
-<img src="assets/logo.png"></img>
+
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-Any Version-blue?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Version">
   <img src="https://img.shields.io/badge/Statut-In Development-success?style=for-the-badge" alt="Status">
 </p>
+
+<img src="assets/logo.png"></img>
 
 ## Overview
 My ultimate minecraft launcher, made using python.
