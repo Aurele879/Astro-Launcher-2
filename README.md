@@ -1,7 +1,7 @@
 ## 🪐 Astro Launcher 2
 <img src="assets/logo.png"></img>
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-Any-blue?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Version">
+  <img src="https://img.shields.io/badge/Minecraft-Any Version-blue?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Version">
   <img src="https://img.shields.io/badge/Statut-In%20%20Development-success?style=for-the-badge" alt="Status">
 </p>
 
