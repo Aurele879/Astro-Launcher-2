@@ -68,10 +68,11 @@ class Profile:
                 "username": self.username,
                 "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
                 "token": "",
+                "executablePath": "javaw",
                 "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
             command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
             
-            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
+            process = subprocess.Popen(command)
             
             app.root.withdraw()
             update_discord_presence("Playing Minecraft")
