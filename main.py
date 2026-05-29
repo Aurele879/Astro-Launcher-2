@@ -599,35 +599,9 @@ class Launcher:
 
     def start_modloader_install(self, install_function, version: str, dir: str): #Start modloader installation in a separate thread and close the window
         self.loader_window.destroy()
-        install_thread = threading.Thread(target=self.install_modloader_with_java, args=(install_function, version, dir), daemon=True)
+        install_thread = threading.Thread(target=install_function, args=(version, dir), daemon=True)
         install_thread.start()
         self.loading_page(text='Installing mod loader ...')
-
-    def install_modloader_with_java(self, install_function, version: str, dir: str): #Install modloader using Minecraft's embedded Java
-        try:
-            # First ensure the version is installed (this downloads embedded Java)
-            installed_versions = minecraft_launcher_lib.utils.get_installed_versions(dir)
-            version_installed = any(v.get("id") == version for v in installed_versions)
-            
-            if not version_installed:
-                print(f"Installing Minecraft version {version} (this will also download Java)...")
-                minecraft_launcher_lib.install.install_minecraft_version(version, dir)
-            
-            # Find Minecraft's embedded Java
-            java_path = find_minecraft_java(dir)
-            if java_path and os.path.exists(java_path):
-                print(f"Using Minecraft embedded Java: {java_path}")
-                # Set environment variables for the subprocess
-                os.environ['JAVA_HOME'] = os.path.dirname(os.path.dirname(java_path))
-            else:
-                print("Warning: Minecraft embedded Java not found, using system Java")
-                java_path = None
-            
-            # Now install the modloader with the correct Java
-            install_function(version, dir, java_path)
-        except Exception as e:
-            print(f"Error during modloader installation: {str(e)}")
-            raise
 
     def install_forge(self, version: str, dir: str, java_path=None): #Find and install Forge for the selected version
         try:
