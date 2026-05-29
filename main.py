@@ -14,6 +14,7 @@ import configparser
 import hashlib
 import ctypes
 import time
+import glob
 from pypresence import Presence
 
 """
@@ -68,7 +69,7 @@ class Profile:
                 "username": self.username,
                 "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
                 "token": "",
-                "executablePath": "javaw",
+                #"executablePath": "javaw",
                 "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
             command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
             
@@ -92,6 +93,19 @@ class Profile:
         app.main_page()
         update_discord_presence("Idle")
 
+
+"""
+Utility function to find Minecraft embedded Java
+"""
+def find_minecraft_java(minecraft_dir):
+    """Finds the java.exe embedded by Minecraft during version installation"""
+    java_paths = glob.glob(os.path.join(minecraft_dir, "runtime", "**", "java.exe"), recursive=True)
+    if java_paths:
+        return java_paths[0]
+    java_paths = glob.glob(os.path.join(minecraft_dir, "runtime", "**", "bin", "java.exe"), recursive=True)
+    if java_paths:
+        return java_paths[0]
+    return None
 
 """
 Class defining the launcher itself : GUI and the interaction between this GUI and the BackEnd
@@ -189,7 +203,7 @@ class Launcher:
                                                             progress_color="#47316F")
         
         self.loading_label = customtkinter.CTkLabel(self.root, 
-                                                           text="Downloading game files ...",
+                                                           text="Downloading files ...",
                                                            font=("Arial", 15, "bold"))
 
         self.back_button = customtkinter.CTkButton(self.root,
@@ -402,11 +416,12 @@ class Launcher:
             total_ram_gb = 2
         return total_ram_gb
 
-    def loading_page(self): #Displaying loading page widgets in the window
+    def loading_page(self, text): #Displaying loading page widgets in the window
         self.clear_ui()
         self.bg.pack()
         self.loading_bar.place(relx=0.05, rely=0.882)
         self.loading_label.place(relx=0.05, rely=0.92)
+        self.loading_label.configure(text=text)
         self.loading_bar.start()
         
     def off_login_page(self): #Displaying offline login page widgets in the window
@@ -547,7 +562,7 @@ class Launcher:
         forge_button = customtkinter.CTkButton(self.loader_window,
                                                text="Forge",
                                                width=180,
-                                               command=lambda: self.install_forge(self.versions_combobox.get(), self.profile.profile_directory),
+                                               command=lambda: self.start_modloader_install(self.install_forge, self.versions_combobox.get(), self.profile.profile_directory),
                                                fg_color="#47316F",
                                                hover_color="#342451")
         forge_button.place(relx=0.5, rely=0.35, anchor="center")
@@ -555,7 +570,7 @@ class Launcher:
         neoforge_button = customtkinter.CTkButton(self.loader_window,
                                                   text="NeoForge",
                                                   width=180,
-                                                  command=lambda: self.install_neoforge(self.versions_combobox.get(), self.profile.profile_directory),
+                                                  command=lambda: self.start_modloader_install(self.install_neoforge, self.versions_combobox.get(), self.profile.profile_directory),
                                                   fg_color="#47316F",
                                                   hover_color="#342451")
         neoforge_button.place(relx=0.5, rely=0.55, anchor="center")
@@ -563,7 +578,7 @@ class Launcher:
         fabric_button = customtkinter.CTkButton(self.loader_window,
                                                 text="Fabric",
                                                 width=180,
-                                                command=lambda: self.install_fabric(self.versions_combobox.get(), self.profile.profile_directory),
+                                                command=lambda: self.start_modloader_install(self.install_fabric, self.versions_combobox.get(), self.profile.profile_directory),
                                                 fg_color="#47316F",
                                                 hover_color="#342451")
         fabric_button.place(relx=0.5, rely=0.75, anchor="center")
@@ -582,7 +597,39 @@ class Launcher:
         if modded_version is not None:
             self.versions_combobox.set(modded_version)
 
-    def install_forge(self, version: str, dir: str): #Find and install Forge for the selected version
+    def start_modloader_install(self, install_function, version: str, dir: str): #Start modloader installation in a separate thread and close the window
+        self.loader_window.destroy()
+        install_thread = threading.Thread(target=self.install_modloader_with_java, args=(install_function, version, dir), daemon=True)
+        install_thread.start()
+        self.loading_page(text='Installing mod loader ...')
+
+    def install_modloader_with_java(self, install_function, version: str, dir: str): #Install modloader using Minecraft's embedded Java
+        try:
+            # First ensure the version is installed (this downloads embedded Java)
+            installed_versions = minecraft_launcher_lib.utils.get_installed_versions(dir)
+            version_installed = any(v.get("id") == version for v in installed_versions)
+            
+            if not version_installed:
+                print(f"Installing Minecraft version {version} (this will also download Java)...")
+                minecraft_launcher_lib.install.install_minecraft_version(version, dir)
+            
+            # Find Minecraft's embedded Java
+            java_path = find_minecraft_java(dir)
+            if java_path and os.path.exists(java_path):
+                print(f"Using Minecraft embedded Java: {java_path}")
+                # Set environment variables for the subprocess
+                os.environ['JAVA_HOME'] = os.path.dirname(os.path.dirname(java_path))
+            else:
+                print("Warning: Minecraft embedded Java not found, using system Java")
+                java_path = None
+            
+            # Now install the modloader with the correct Java
+            install_function(version, dir, java_path)
+        except Exception as e:
+            print(f"Error during modloader installation: {str(e)}")
+            raise
+
+    def install_forge(self, version: str, dir: str, java_path=None): #Find and install Forge for the selected version
         try:
             forge_version = minecraft_launcher_lib.forge.find_forge_version(version)
             if forge_version is None:
@@ -590,12 +637,16 @@ class Launcher:
             
             print(f"Installing Forge ({forge_version}) in {dir}...")
             forge =  minecraft_launcher_lib.mod_loader.get_mod_loader("forge")
-            forge.install(version, dir)
+            if java_path:
+                forge.install(version, dir, java_path=java_path)
+            else:
+                forge.install(version, dir)
             print("Forge installation completed.")
+            self.edit_profile_page()
             self.update_modded_profile(version, "forge")
         except Exception as e:
             messagebox.showerror("Installation Error", f"Unable to install Forge:\n{str(e)}")
-        self.loader_window.destroy()
+            self.edit_profile_page()
 
     def install_neoforge(self, version: str, dir: str): #Find and install NeoForge for the selected version
         try:
@@ -607,10 +658,11 @@ class Launcher:
             neoforge =  minecraft_launcher_lib.mod_loader.get_mod_loader("neoforge")
             neoforge.install(version, dir)
             print("NeoForge installation completed.")
+            self.edit_profile_page()
             self.update_modded_profile(version, "neoforge")
         except Exception as e:
             messagebox.showerror("Installation Error", f"Unable to install NeoForge:\n{str(e)}")
-        self.loader_window.destroy()
+            self.edit_profile_page()
 
     def install_fabric(self, version: str, dir: str): #Install Fabric for the selected version
         try:
@@ -618,10 +670,11 @@ class Launcher:
             fabric =  minecraft_launcher_lib.mod_loader.get_mod_loader("fabric")
             fabric.install(version, dir)
             print("Fabric installation completed.")
+            self.edit_profile_page()
             self.update_modded_profile(version, "fabric")
         except Exception as e:
             messagebox.showerror("Installation Error", f"Unable to install Fabric:\n{str(e)}")
-        self.loader_window.destroy()
+            self.edit_profile_page()
 
     def verify_str(self, string_to_verify): #Verify if a string is valid for a profile name (not empty and only contains allowed characters)
         allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
@@ -815,7 +868,7 @@ class Launcher:
         if self.profiles_combobox.get() == "none":
             messagebox.showerror("Error", "Create a profile first !")
             return
-        self.loading_page()
+        self.loading_page(text='Downloading game files ...')
         selected_profile = self.get_profile_from_name(selected_profile_name)
         selected_profile.username = self.username
         selected_profile.ram = str(self.get_saved_ram())
