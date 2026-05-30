@@ -69,11 +69,10 @@ class Profile:
                 "username": self.username,
                 "uuid": str(uuid.UUID(bytes=hashlib.md5(bytes(f"OfflinePlayer:{self.username}", "utf-8")).digest()[:16])),
                 "token": "",
-                #"executablePath": "javaw",
                 "jvmArguments": [f"-Xmx{self.ram}G", f"-Xms{self.ram}G"]}
             command = minecraft_launcher_lib.command.get_minecraft_command(self.version, self.profile_directory, self.options)
             
-            process = subprocess.Popen(command)
+            process = subprocess.Popen(command, creationflags=subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP)
             
             app.root.withdraw()
             update_discord_presence("Playing Minecraft")
@@ -92,20 +91,6 @@ class Profile:
         app.root.deiconify()
         app.main_page()
         update_discord_presence("Idle")
-
-
-"""
-Utility function to find Minecraft embedded Java
-"""
-def find_minecraft_java(minecraft_dir):
-    """Finds the java.exe embedded by Minecraft during version installation"""
-    java_paths = glob.glob(os.path.join(minecraft_dir, "runtime", "**", "java.exe"), recursive=True)
-    if java_paths:
-        return java_paths[0]
-    java_paths = glob.glob(os.path.join(minecraft_dir, "runtime", "**", "bin", "java.exe"), recursive=True)
-    if java_paths:
-        return java_paths[0]
-    return None
 
 """
 Class defining the launcher itself : GUI and the interaction between this GUI and the BackEnd
@@ -661,16 +646,16 @@ class Launcher:
 
         return True
     
-    def create_dummy_launcher_config(self, profile_directory): #Create a dummy launcher_profiles.json to avoid errors when launching the game for the first time
+    def create_dummy_launcher_config(self, profile_directory, original_version): #Create a dummy launcher_profiles.json to avoid errors when launching the game for the first time
         data = {
             "profiles": {
                 "Default": {
                     "name": "Default",
                     "type": "custom",
-                    "created": "2024-01-01T00:00:00.000Z",
-                    "lastUsed": "2024-01-01T00:00:00.000Z",
+                    "created": "2026-01-01T00:00:00.000Z",
+                    "lastUsed": "2026-01-01T00:00:00.000Z",
                     "icon": "Grass",
-                    "lastVersionId": "1.20.1"
+                    "lastVersionId": original_version
                 }
             },
             "settings": {
@@ -683,6 +668,7 @@ class Launcher:
                 "profilesFormat": 3
             }
         }
+        os.remove(os.path.join(profile_directory, "launcher_profiles.json"))
         os.makedirs(profile_directory, exist_ok=True)
         path = os.path.join(profile_directory, "launcher_profiles.json")
         with open(path, "w", encoding="utf-8") as f:
@@ -694,7 +680,7 @@ class Launcher:
             return 1
         try:
             os.mkdir(f"instances/{self.profile_name_entry.get()}")
-            self.create_dummy_launcher_config(f"instances/{self.profile_name_entry.get()}")
+            self.create_dummy_launcher_config(f"instances/{self.profile_name_entry.get()}", self.versions_combobox.get())
             self.profile_list.append(Profile(self.profile_name_entry.get(), self.versions_combobox.get()))
             self.save_profiles()
             self.profiles_combobox_variable.set(self.profile_name_entry.get())
@@ -723,6 +709,7 @@ class Launcher:
                 old_profile = self.profile_list[target_index]
                 old_dir = old_profile.profile_directory
                 new_dir = os.path.join("instances", new_name)
+                self.create_dummy_launcher_config(f"instances/{self.profile_name_entry.get()}", self.versions_combobox.get())
                 os.rename(old_dir, new_dir)
                 self.profile_list[target_index] = Profile(new_name, new_version)
 
@@ -856,7 +843,16 @@ Entry Point
 """
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    if not os.path.exists("config.ini"):
+        config['GUI'] = {
+            'last_used_profile': 'none',
+            'last_used_nickname': 'Steve',
+            'ram_allocation': '2'
+        }
+        with open("config.ini", 'w') as configfile:
+            config.write(configfile)
+    else:
+        config.read('config.ini')
 
     if not os.path.exists("instances"):
         os.mkdir("instances")
