@@ -1,22 +1,20 @@
-## 🪐 Astro Launcher 2
+## ♦️ Astro Launcher 2
 
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-Any Version-blue?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Version">
   <img src="https://img.shields.io/badge/Statut-In Development-success?style=for-the-badge" alt="Status">
 </p>
 
-<img src="assets/logo.png"></img>
-
 ## Overview
-My ultimate minecraft launcher, made using python.
-You can use it to play any version of Minecraft with separed game files for each profiles.
+A minecraft launcher written in python. It can run any version of the game, whether vanilla or modded.
+The software is made to separate profiles made by the player. To make it simple, when you want to launch the game, you first need to create a profile with a name and a version. When this is done, you can launch it and all files will be isolated from your others profiles. If you use different texture packs or mods in different versions, every world is only accessible from the profile you used to create it.
 
-### Objectives
+### Features
 
-| Functionality | Implementation |
+| Feature | Implementation |
 | :--- | :--- |
 | **GUI** | ✅ |
-| **Profiles files separation** | ✅ |
+| **Profiles** | ✅ |
 | **Offline Login** | ✅ |
 | **Customizable settings** | ✅ |
 | **Discord Rich Presence** | ✅ |
