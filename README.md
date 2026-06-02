@@ -15,8 +15,6 @@ The software is made to separate profiles made by the player. To make it simple,
 | :--- | :--- |
 | **GUI** | ✅ |
 | **Profiles** | ✅ |
-| **Offline Login (will be deleted when Microsoft will allow my Azure App to work)** | ✅ |
-| **Online Login** | ❌ |
 | **Customizable settings** | ✅ |
 | **Discord Rich Presence** | ✅ |
 
@@ -34,7 +32,5 @@ The software is made to separate profiles made by the player. To make it simple,
 
 
 ## ⚙️ Installation
-To execute this app, you only need to download the last release in the dedicated section, next, extract the zip file and create a shortcut were you want the "AstroLauncher 2.exe" file to be.
-
-## 🚀 Usage
-Once your shortcut is placed in the place you want, you can launch it and enjoy !
+Since distributing a way to play the game for free is against the TOS of the game, all the pre - releases and releases are definitely deleted. If you want to check the code of thoses versions for EDUCATIONAL PURPOSES, you can find it in the tags, but I refuse to take responsability for any distribution of a compiled version to anyone.
+The next release will be published when I will be able to provide an official Microsoft Account support.
