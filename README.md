@@ -15,7 +15,8 @@ The software is made to separate profiles made by the player. To make it simple,
 | :--- | :--- |
 | **GUI** | ✅ |
 | **Profiles** | ✅ |
-| **Offline Login** | ✅ |
+| **Offline Login (will be deleted when Microsoft will allow my Azure App to work)** | ✅ |
+| **Online Login** | ❌ |
 | **Customizable settings** | ✅ |
 | **Discord Rich Presence** | ✅ |
 
