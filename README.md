@@ -32,5 +32,4 @@ The software is made to separate profiles made by the player. To make it simple,
 
 
 ## ⚙️ Installation
-Since distributing a way to play the game for free is against the TOS of the game, all the pre - releases and releases are definitely deleted. If you want to check the code of thoses versions for EDUCATIONAL PURPOSES, you can find it in the tags, but I refuse to take responsability for any distribution of a compiled version to anyone.
-The next release will be published when I will be able to provide an official Microsoft Account support.
+This project is only made for educational and technical demonstration reasons, if you don't own the game, don't even try to compile it.
