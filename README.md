@@ -32,4 +32,4 @@ The software is made to separate profiles made by the player. To make it simple,
 
 
 ## ⚙️ Installation
-This project is only made for educational and technical demonstration reasons, if you don't own the game, don't even try to compile it.
+For the moment, the official Microsoft authentication system is not active while awaiting the Azure AppID review. Consequently, this project is currently maintained as a technical demonstration and must only be used if you legally OWN the game.
