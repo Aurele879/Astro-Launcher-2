@@ -27,7 +27,7 @@ def discord_presence_worker(): #Function setting up the link with the discord AP
         
         presence.update(
             state="Idle",
-            large_text="Astro Launcher 2",
+            large_text="Kanoite Launcher",
             small_image="block"
         )
         while True:
