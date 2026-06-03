@@ -1,5 +1,4 @@
-## ♦️ Astro Launcher 2
-// Changing name to Kanoite Launcher soon //
+## ♦️ Kanoite Launcher (Formerly Astro Launcher 2)
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-Any Version-blue?style=for-the-badge&logo=minecraft&logoColor=white" alt="Minecraft Version">
   <img src="https://img.shields.io/badge/Statut-In Development-success?style=for-the-badge" alt="Status">
