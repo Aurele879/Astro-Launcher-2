@@ -1,0 +1,21 @@
+{
+    "profiles": {
+        "Default": {
+            "name": "Default",
+            "type": "custom",
+            "created": "2026-01-01T00:00:00.000Z",
+            "lastUsed": "2026-01-01T00:00:00.000Z",
+            "icon": "Grass",
+            "lastVersionId": "CTkComboBox"
+        }
+    },
+    "settings": {
+        "crashAssistance": true,
+        "enableAdvanced": true
+    },
+    "launcherVersion": {
+        "format": 21,
+        "name": "2.x",
+        "profilesFormat": 3
+    }
+}
