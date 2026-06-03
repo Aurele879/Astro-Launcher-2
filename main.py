@@ -100,7 +100,7 @@ class Launcher:
         
         self.root = customtkinter.CTk()
         self.root.geometry("1000x550")
-        self.root.title("Astro Launcher 2")
+        self.root.title("Kanoite Launcher")
         self.root.resizable(False, False)
         self.root.iconbitmap("assets/icon.ico")
         self.root.configure(fg_color="#1C1C1C")
